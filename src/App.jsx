@@ -607,9 +607,10 @@ export default function App() {
   const [loading,setLoading]           = useState(false);
   const [w1Loading,setW1Loading]       = useState(false);
   const [timer,setTimer]               = useState(null);
-  const [showComplete,setShowComplete] = useState(false);
-  const [completionMsg,setCompletionMsg] = useState("");
-  const timerRef                       = useRef(null);
+  const [showComplete,setShowComplete]       = useState(false);
+  const [completionMsg,setCompletionMsg]     = useState("");
+  const [completedSessions,setCompletedSessions] = useState([]);
+  const timerRef                             = useRef(null);
 
   useEffect(()=>{
     supabase.auth.getSession().then(({data:{session}})=>{setSession(session);setAuthReady(true);});
@@ -624,6 +625,7 @@ export default function App() {
     if(error&&error.code==='PGRST116') setUserProgress(null);
     else if(progress){
       setUserProgress(progress);
+      if(progress.completed_sessions) setCompletedSessions(progress.completed_sessions);
       const{week:autoWeek,tab:autoTab}=getAutoWeekAndTab(progress.start_date,progress.day1_dow??0,progress.day2_dow??2,progress.day3_dow??4);
       setWeek(autoWeek||progress.current_week||1);
       setTab(autoTab||progress.current_day||'chest_tri');
@@ -820,10 +822,27 @@ export default function App() {
     setW1Loading(false);
   };
 
-  const handleFinishWorkout=()=>{
+  const NEXT_TAB = { chest_tri:'back_shoulder_bi', back_shoulder_bi:'legs', legs:'chest_tri' };
+
+  const handleFinishWorkout=async()=>{
     const msgs=COMPLETE_MSGS;
     setCompletionMsg(msgs[(week+Object.keys(done).filter(k=>done[k]).length)%msgs.length]);
+    // Mark this session complete
+    const sessionKey=`${tab}_w${week}`;
+    const updated=[...new Set([...completedSessions,sessionKey])];
+    setCompletedSessions(updated);
+    if(session) await supabase.from("user_progress").upsert({user_id:session.user.id,completed_sessions:updated,updated_at:new Date().toISOString()});
     setShowComplete(true);
+  };
+
+  const handleKeepGoing=()=>{
+    setShowComplete(false);
+    // Navigate to next workout
+    const nextT=NEXT_TAB[tab];
+    const nextW=nextT==='chest_tri'?Math.min(12,week+1):week;
+    changeTab(nextT);
+    if(nextW!==week) changeWeek(nextW);
+    window.scrollTo({top:0,behavior:'smooth'});
   };
 
   if(!authReady) return <div style={{background:"#080808",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"#AAA",fontFamily:"'JetBrains Mono',monospace",fontSize:"12px"}}>Loading...</div>;
@@ -831,7 +850,6 @@ export default function App() {
   if(userProgress===undefined) return <div style={{background:"#080808",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"#AAA",fontFamily:"'JetBrains Mono',monospace",fontSize:"12px"}}>Loading your plan...</div>;
   if(userProgress===null||!userProgress.setup_complete) return <OnboardingScreen session={session} onComplete={()=>loadProgress()}/>;
   if(screen==="settings") return <SettingsScreen session={session} userProgress={userProgress} onBack={()=>setScreen("workout")} onSave={()=>{loadProgress();setScreen("workout");}}/>;
-  if(screen==="history") return <HistoryScreen session={session} adj={adj} onBack={()=>setScreen("workout")}/>;
 
   const day=PLAN[tab]; const wi=week-1; const phase=PHASES[wi]; const pc=PHASE_COLORS[phase];
   const mobility=MOBILITY[tab];
@@ -855,7 +873,7 @@ export default function App() {
       `}</style>
 
       {/* COMPLETION OVERLAY */}
-      {showComplete && <CompletionOverlay day={day} week={week} message={completionMsg} onClose={()=>setShowComplete(false)}/>}
+      {showComplete && <CompletionOverlay day={day} week={week} message={completionMsg} onClose={handleKeepGoing}/>}
 
       {/* HEADER */}
       <div style={{position:"sticky",top:0,zIndex:20,background:"#080808",borderBottom:"1px solid #1A1A1A",padding:"12px 16px 10px"}}>
@@ -863,17 +881,39 @@ export default function App() {
           <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"10px",color:"#888",letterSpacing:"2px"}}>12-WEEK PROGRAM</span>
           <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
             <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"10px",letterSpacing:"1.5px",background:pc+"18",color:pc,padding:"3px 8px",borderRadius:"2px"}}>{phase.toUpperCase()}</span>
-            <button onClick={()=>setScreen("history")} style={{background:"none",border:"1px solid #2A2A2A",color:"#AAA",width:"28px",height:"28px",borderRadius:"3px",cursor:"pointer",fontSize:"13px",lineHeight:1}}>📋</button>
-            <button onClick={()=>setScreen("settings")} style={{background:"none",border:"1px solid #2A2A2A",color:"#AAA",width:"28px",height:"28px",borderRadius:"3px",cursor:"pointer",fontSize:"14px",lineHeight:1}}>⚙</button>
-            <button onClick={()=>supabase.auth.signOut()} style={{background:"none",border:"none",color:"#888",fontFamily:"'JetBrains Mono',monospace",fontSize:"10px",cursor:"pointer",letterSpacing:"1px"}}>{userName} · out</button>
+            <button onClick={()=>setScreen("settings")} style={{background:"none",border:"1px solid #2A2A2A",color:"#AAA",width:"28px",height:"28px",borderRadius:"3px",cursor:"pointer",fontSize:"14px",display:"flex",alignItems:"center",justifyContent:"center"}}>⚙</button>
+            <button onClick={()=>supabase.auth.signOut()} style={{background:"none",border:"1px solid #2A2A2A",color:"#AAA",borderRadius:"3px",padding:"0 10px",height:"28px",fontFamily:"'JetBrains Mono',monospace",fontSize:"10px",cursor:"pointer",letterSpacing:"1px",whiteSpace:"nowrap"}}>Log out</button>
           </div>
         </div>
+        {/* WEEK PROGRESSION ROW */}
+        <div style={{display:"flex",gap:"3px",marginBottom:"10px",alignItems:"center"}}>
+          {Array(12).fill(null).map((_,i)=>{
+            const wk=i+1;
+            const isCompleted=(['chest_tri','back_shoulder_bi','legs'].every(t=>completedSessions.includes(`${t}_w${wk}`)));
+            const isCurrent=wk===week;
+            return (
+              <button key={wk} onClick={()=>changeWeek(wk)} style={{flex:1,height:"24px",borderRadius:"3px",background:isCompleted?"#22C55E":isCurrent?day.accent+"33":"#1A1A1A",border:`1px solid ${isCompleted?"#22C55E":isCurrent?day.accent:"#2A2A2A"}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:"1px",padding:0}}>
+                {isCompleted ? (
+                  <span style={{fontSize:"9px",color:"#000",fontWeight:700}}>✓</span>
+                ) : (
+                  <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"8px",color:isCurrent?day.accent:"#555",fontWeight:isCurrent?700:400}}>{wk}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        {/* DAY TABS */}
         <div style={{display:"flex",gap:"6px",marginBottom:"10px"}}>
-          {Object.entries(PLAN).map(([key,d])=>(
-            <button key={key} onClick={()=>changeTab(key)} style={{flex:1,padding:"8px 4px",background:tab===key?d.accent:"#111",border:`1px solid ${tab===key?d.accent:"#222"}`,borderRadius:"3px",color:tab===key?"#000":"#888",fontSize:"13px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:tab===key?"700":"400",letterSpacing:"1px",cursor:"pointer",lineHeight:1.2,textAlign:"center"}}>
-              {d.day}<br/><span style={{fontSize:"10px"}}>{d.label.split(" ")[0]}</span>
-            </button>
-          ))}
+          {Object.entries(PLAN).map(([key,d])=>{
+            const sessionDone=completedSessions.includes(`${key}_w${week}`);
+            const isActive=tab===key;
+            return (
+              <button key={key} onClick={()=>changeTab(key)} style={{flex:1,padding:"8px 4px",background:sessionDone?"#0D200D":isActive?d.accent:"#111",border:`1px solid ${sessionDone?"#22C55E44":isActive?d.accent:"#222"}`,borderRadius:"3px",color:sessionDone?"#22C55E":isActive?"#000":"#888",fontSize:"13px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:isActive||sessionDone?"700":"400",letterSpacing:"1px",cursor:"pointer",lineHeight:1.2,textAlign:"center",position:"relative"}}>
+                {sessionDone && <span style={{position:"absolute",top:"3px",right:"4px",fontSize:"8px",color:"#22C55E"}}>✓</span>}
+                {d.day}<br/><span style={{fontSize:"10px"}}>{d.label.split(" ")[0]}</span>
+              </button>
+            );
+          })}
         </div>
         {/* PROMINENT WEEK DISPLAY */}
         <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
