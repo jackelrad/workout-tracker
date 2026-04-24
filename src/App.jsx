@@ -525,7 +525,7 @@ function RestTimer({ timer, accent, onSkip }) {
 export default function App() {
   const [session, setSession]       = useState(null);
   const [authReady, setAuthReady]   = useState(false);
-  const [userProgress, setUserProgress] = useState(null);
+  const [userProgress, setUserProgress] = useState(undefined);
   const [screen, setScreen]         = useState("workout");
   const [tab, setTab]               = useState("chest_tri");
   const [week, setWeek]             = useState(1);
@@ -724,8 +724,8 @@ export default function App() {
 
   if (!authReady) return <div style={{background:"#080808",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"#444",fontFamily:"'JetBrains Mono',monospace",fontSize:"12px"}}>Loading...</div>;
   if (!session)   return <AuthScreen />;
-  if (userProgress === null) return <div style={{background:"#080808",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"#444",fontFamily:"'JetBrains Mono',monospace",fontSize:"12px"}}>Loading your plan...</div>;
-  if (userProgress && !userProgress.setup_complete) return <OnboardingScreen session={session} onComplete={() => loadProgress()} />;
+  if (userProgress === undefined) return <div style={{background:"#080808",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"#444",fontFamily:"'JetBrains Mono',monospace",fontSize:"12px"}}>Loading your plan...</div>;
+  if (userProgress === null || !userProgress.setup_complete) return <OnboardingScreen session={session} onComplete={() => loadProgress()} />;
   if (screen === "settings") return <SettingsScreen session={session} userProgress={userProgress} onBack={() => setScreen("workout")} onSave={() => { loadProgress(); setScreen("workout"); }} />;
 
   const day = PLAN[tab]; const wi = week - 1; const phase = PHASES[wi]; const pc = PHASE_COLORS[phase];
