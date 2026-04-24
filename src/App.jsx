@@ -658,7 +658,7 @@ export default function App() {
     const summary = day.groups.flatMap(g => g.exercises.map(ex => { const w = getW(ex.id, wi); return `${ex.name}: ${ex.sets[wi]}x${ex.reps[wi]} @ ${ex.isPullup?(w===0?"bodyweight":`+${w}lbs`):`${w}lbs`}`; })).join("\n");
     const ids = day.groups.flatMap(g => g.exercises.map(e => e.id)).join(",");
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:500, messages:[{role:"user",content:buildPrompt(summary,feedback,ids,wi)}] }) });
+      const res = await fetch("/api/claude", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:500, messages:[{role:"user",content:buildPrompt(summary,feedback,ids,wi)}] }) });
       const data = await res.json();
       const text = data.content.filter(b => b.type==="text").map(b => b.text).join("");
       const parsed = JSON.parse(text.replace(/```json|```/g,"").trim());
@@ -676,7 +676,7 @@ export default function App() {
     const ids = day.groups.flatMap(g => g.exercises.map(e => e.id)).join(",");
     const prompt = `Strength coach. This is the end of Week 1, ${PHASES[0]} phase. The athlete is calibrating their plan for the remaining 11 weeks.\n\nWeek 1 workout:\n${summary}\n\nWeek 1 feedback: "${w1Feedback}"\n\nReturn ONLY valid JSON, no markdown:\n{"analysis":"one sentence summary of adjustments needed","adjustments":{/* id: corrected_week1_weight. Only include exercises that need adjustment. IDs: ${ids} */}}\n\nRules: round to 2.5lbs. These weights will be used to shift the entire 12-week plan proportionally. Pull-up weight=added lbs. Be conservative.`;
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:600, messages:[{role:"user",content:prompt}] }) });
+      const res = await fetch("/api/claude", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:600, messages:[{role:"user",content:prompt}] }) });
       const data = await res.json();
       const text = data.content.filter(b => b.type==="text").map(b => b.text).join("");
       setW1AiRes(JSON.parse(text.replace(/```json|```/g,"").trim()));
