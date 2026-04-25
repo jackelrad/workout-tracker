@@ -162,7 +162,7 @@ const FORM_CUES={
   incline:{setup:"Bench at 30-45°. DBs at chest level, elbows slightly below bench line at the bottom.",cues:"Press straight up — don't let DBs travel toward each other. Feel the stretch at the bottom. Stop just short of lockout. Shoulders packed, not shrugging."},
   skull:{setup:"Lie flat, EZ bar over forehead. Elbows shoulder-width apart, pointed at the ceiling.",cues:"Lower bar just behind your forehead. Elbows stay pointing up — flaring is the key failure point. Controlled down, press up. 10lb increments only."},
   fly:{setup:"Cable at chest height or slightly above. Slight forward lean. Slight bend in elbows — hold that angle the entire set.",cues:"Drive with upper arms, not hands. Think hugging a tree. Full stretch at start. Stop just before hands touch. Don't let the weight yank your shoulder back."},
-  kickback:{setup:"Cable set low. Hinge forward at hips, upper arm parallel to the floor and pinned to your side. Forearm hangs down at start.",cues:"Extend forearm back until arm is fully straight. Squeeze hard at the top for 1 count. Pure elbow extension — no shoulder movement."},
+  kickback:{setup:"Cable set low. Stand side-on. Hinge forward at hips, upper arm pinned to your side parallel to the floor. This is a single-arm movement — complete all reps on one side before switching.",cues:"Extend forearm back until arm is fully straight. Squeeze at the top for 1 count. Keep upper arm completely still — only the forearm moves. Use a lighter weight than you think. 7.5-10lbs is correct for most people at this ROM."},
   pullup:{setup:"Grip just outside shoulder-width, palms facing away. Dead hang to start. Engage lats before you pull.",cues:"Full dead hang between every rep — this is where ROM gets lost. Drive elbows down and back. Chin clears the bar every rep. Reduce reps before sacrificing range."},
   row:{setup:"Bar below knee, slight knee bend, hinge at hips ~45°. Back neutral — not rounded.",cues:"Drive elbows back, not up. Bar touches your lower abdomen at the top. Pause and squeeze. 2s controlled eccentric. Torso should not swing."},
   facepull:{setup:"Cable at face height. Rope attachment. Step back until arms are extended.",cues:"Pull rope to your face, hands finishing beside your ears. Think show your armpits. External rotation is the goal — shoulder health work. Light weight, high control, every week."},
@@ -180,16 +180,22 @@ const FORM_CUES={
 
 const MOBILITY={
   chest_tri:[
-    {name:"Thoracic Rotation",timing:"5 reps/side · 45s",instructions:"Sit or kneel with hands behind your head. Slowly rotate your upper back as far as you can each direction. Feel your mid-back doing the work."},
-    {name:"Pec Minor Stretch",timing:"30s/side · 60s",instructions:"Place forearm against a rack upright at 90°. Step through until you feel a stretch across your chest and front shoulder. Hold steady. Switch sides."}
+    {name:"Thoracic Rotation",timing:"8 reps/side · 60s",instructions:"Sit or kneel, hands behind your head. Rotate your upper back as far as you can each direction. Feel mid-back doing the work, not your hips."},
+    {name:"Pec Minor Doorway Stretch",timing:"30s/side · 60s",instructions:"Place forearm on a rack upright at 90°. Step through until you feel a stretch across your chest and front shoulder. Hold steady, breathe, then switch sides."},
+    {name:"Band Pull-Apart",timing:"2 × 15 reps · 60s",instructions:"Hold a band or light cable at chest height, arms straight. Pull apart until hands are at your sides. Squeeze rear delts at the end. Reverses the rounded posture from pressing."},
+    {name:"Wrist Circles + Extension",timing:"10 reps each direction · 30s",instructions:"Make slow circles with both wrists, then press palms forward to stretch the forearms. Barbell work loads the wrists — take 30 seconds to wake them up."}
   ],
   back_shoulder_bi:[
-    {name:"Lat Hang",timing:"2 × 20s · 60s",instructions:"Hang from the pull-up bar with a full dead hang. Let your shoulder blades rise fully. Two short holds, not one long one."},
-    {name:"Band Pull-Apart",timing:"2 × 15 reps · 60s",instructions:"Use a light band or the face pull cable at minimal weight. Focus on squeezing the rear delts and external rotators at the end range."}
+    {name:"Lat Hang",timing:"3 × 20s · 90s",instructions:"Dead hang from the pull-up bar. Let your shoulder blades rise fully — don't actively pull them down. Three holds. This decompresses the spine and primes the lats before pulling."},
+    {name:"Band Pull-Apart",timing:"2 × 20 reps · 60s",instructions:"Chest-height, arms straight. Focus on squeezing rear delts and external rotators at the end range. Keep arms straight throughout."},
+    {name:"Shoulder Circles + Cross-Body Stretch",timing:"10 reps each + 20s/side · 60s",instructions:"Large arm circles forward and back to warm the rotator cuff. Then pull each arm across your chest and hold. Protects the shoulder joint during overhead pressing."},
+    {name:"Cat-Cow",timing:"8 slow reps · 45s",instructions:"On all fours. Breathe in as you drop your belly and lift your head (cow), breathe out as you round your back to the ceiling (cat). Mobilizes the thoracic spine for row mechanics."}
   ],
   legs:[
-    {name:"Leg Swings",timing:"10 reps/direction/side · 60s",instructions:"Hold onto a rack. Swing each leg front-to-back 10 times, then side-to-side 10 times. Controlled but full range."},
-    {name:"Deep Squat Hold",timing:"2 × 20s · 60s",instructions:"Hold a rack and lower into the deepest squat you can maintain with a flat back. Let your hips sink, knees track over toes. Two holds, no bouncing."}
+    {name:"Leg Swings",timing:"12 reps/direction/side · 75s",instructions:"Hold a rack. Swing each leg front-to-back 12 times, then side-to-side 12 times. Controlled at the end ranges. Hip flexors and adductors need this before heavy hinging and pressing."},
+    {name:"Deep Squat Hold",timing:"3 × 20s · 75s",instructions:"Hold a rack and lower into the deepest squat you can with a flat back. Hips sink, knees track over toes. Breathe at the bottom. Three holds — don't bounce out."},
+    {name:"Hip 90/90 Stretch",timing:"30s/side · 60s",instructions:"Sit on the floor with both knees bent at 90°, one in front and one behind. Sit tall and lean gently forward over the front shin. Targets hip internal and external rotation for squat depth."},
+    {name:"Ankle Circles + Calf Raise",timing:"10 circles + 10 raises · 45s",instructions:"Circle each ankle 10 times each direction, then do 10 slow bodyweight calf raises on flat ground. Ankle mobility is the most common limiter on leg press and squat depth."}
   ]
 };
 
@@ -203,11 +209,11 @@ const PLAN={
       ]},
       {label:"Superset 2",rest:"Rest 90s",supersetted:true,exercises:[
         {id:"incline",name:"Incline DB Press",weights:[45,50,50,45,55,60,60,65,65,70,70,40],sets:[4,4,4,4,5,5,5,5,4,3,3,3],reps:["10","10","10","12","6","6","5","5","4","3","2-3","8"],backoff:[null,null,null,null,null,null,null,null,null,{sets:2,reps:"6",w:55},{sets:3,reps:"6",w:55},null]},
-        {id:"skull",name:"EZ Bar Skull Crushers",weights:[50,50,50,50,60,60,60,70,70,70,80,50],sets:[4,4,4,4,5,5,5,5,4,4,4,3],reps:["12","12","12","15","8","8","8","8","8","8","8","10"],backoff:Array(12).fill(null),note:"10lb increments only."}
+        {id:"skull",name:"EZ Bar Skull Crushers",weights:[50,50,50,50,60,60,60,70,70,70,80,50],sets:[4,4,4,4,5,5,5,5,4,4,4,3],reps:["12","12","12","15","8","8","8","8","8","8","8","10"],backoff:Array(12).fill(null)}
       ]},
       {label:"Superset 3",rest:"Rest 60s",supersetted:true,exercises:[
         {id:"fly",name:"Cable Fly",weights:[17.5,20,20,17.5,22.5,25,25,27.5,27.5,30,30,17.5],sets:[3,3,3,3,4,4,4,4,3,3,3,3],reps:["12","12","12","15","10","10","10","10","12","12","12","10"],backoff:Array(12).fill(null)},
-        {id:"kickback",name:"Cable Tricep Kickback",weights:[15,17.5,20,20,22.5,25,27.5,30,30,32.5,35,15],sets:[3,3,3,3,4,4,4,4,3,3,3,3],reps:["12","12","12","15","10","10","10","10","12","12","12","10"],backoff:Array(12).fill(null),note:"No overhead load — shoulder safe."}
+        {id:"kickback",name:"Single-Arm Cable Kickback",weights:[10,10,12.5,12.5,15,15,17.5,17.5,17.5,20,20,10],sets:[3,3,3,3,4,4,4,4,3,3,3,3],reps:["12","12","12","15","10","10","10","10","12","12","12","10"],backoff:Array(12).fill(null)}
       ]}
     ]
   },
@@ -215,19 +221,19 @@ const PLAN={
     notes:["Full ROM on every pull-up. Row is a pattern rebuild: form over weight.","Add a rep on pull-ups if ROM was full. Row adds 10lbs.","Row: elbows drive back, not up. Watch form on last shoulder set.","Volume peak. Higher reps. Curl: 4 sets for bicep development.","Belt on for pull-ups. Strength block begins.","Push rows heavy. Controlled eccentric on every rep.","Shoulder press: form over weight. No cheat reps.","Last heavy week before peaking.","Chest-to-bar attempts on weighted pull-ups.","Heavy rows. Every set deliberate.","Near-max weighted pull-ups.","Deload. Move well, recover fully."],
     groups:[
       {label:"Straight Set",rest:"Rest 90s",supersetted:false,exercises:[
-        {id:"pullup",name:"Pull-ups",weights:[0,0,0,0,10,15,20,20,25,30,35,0],sets:[4,4,4,4,4,4,4,4,4,4,4,3],reps:["8","8","9","10","6","6","5","5","4","3","3","6"],backoff:Array(12).fill(null),isPullup:true,note:"Full dead hang between every rep. Reduce reps before losing ROM."}
+        {id:"pullup",name:"Pull-ups",weights:[0,0,0,0,10,15,20,20,25,30,35,0],sets:[4,4,4,4,4,4,4,4,4,4,4,3],reps:["8","8","9","10","6","6","5","5","4","3","3","6"],backoff:Array(12).fill(null),isPullup:true}
       ]},
       {label:"Superset 1",rest:"Rest 90s",supersetted:true,exercises:[
-        {id:"row",name:"Barbell Row",weights:[65,75,85,90,100,110,115,120,125,130,135,90],sets:[4,4,4,4,5,5,5,5,4,4,4,3],reps:["10","10","10","10","6","5","5","5","4","4","4","8"],backoff:Array(12).fill(null),note:"Pattern rebuild — weight climbs quickly. Form over load every set."},
+        {id:"row",name:"Barbell Row",weights:[65,75,85,90,100,110,115,120,125,130,135,90],sets:[4,4,4,4,5,5,5,5,4,4,4,3],reps:["10","10","10","10","6","5","5","5","4","4","4","8"],backoff:Array(12).fill(null)},
         {id:"facepull",name:"Face Pull",weights:[40,42.5,45,47.5,50,52.5,55,57.5,57.5,60,60,40],sets:[4,4,4,4,4,4,4,4,4,4,4,3],reps:["12","12","12","12","12","12","12","12","12","12","12","12"],backoff:Array(12).fill(null)}
       ]},
       {label:"Superset 2",rest:"Rest 90s",supersetted:true,exercises:[
-        {id:"db_shoulder",name:"DB Shoulder Press",weights:[50,52.5,55,55,62.5,65,67.5,70,72.5,75,77.5,50],sets:[3,3,3,3,4,4,4,4,3,3,3,3],reps:["10","10","10","10","6","6","5","5","4","4","3","8"],backoff:Array(12).fill(null),note:"Hold starting weight through W3 until all reps are clean."},
-        {id:"incline_curl",name:"Alternating Incline Curl",weights:[25,25,27.5,30,32.5,35,37.5,40,40,42.5,45,25],sets:[4,4,4,4,4,4,4,4,4,4,4,3],reps:["10","10","10","12","8","8","6","6","8","8","8","10"],backoff:Array(12).fill(null),note:"Supinated grip. Alternate one arm at a time."}
+        {id:"db_shoulder",name:"DB Shoulder Press",weights:[50,52.5,55,55,62.5,65,67.5,70,72.5,75,77.5,50],sets:[3,3,3,3,4,4,4,4,3,3,3,3],reps:["10","10","10","10","6","6","5","5","4","4","3","8"],backoff:Array(12).fill(null)},
+        {id:"incline_curl",name:"Alternating Incline Curl",weights:[25,25,27.5,30,32.5,35,37.5,40,40,42.5,45,25],sets:[4,4,4,4,4,4,4,4,4,4,4,3],reps:["10","10","10","12","8","8","6","6","8","8","8","10"],backoff:Array(12).fill(null)}
       ]},
       {label:"Superset 3",rest:"Rest 60s",supersetted:true,exercises:[
-        {id:"lat_raise",name:"Cable Lateral Raise",weights:[10,10,10,10,12.5,12.5,15,15,17.5,17.5,20,10],sets:[3,3,3,3,4,4,4,4,3,3,3,3],reps:["12","12","12","15","12","12","12","12","12","12","12","10"],backoff:Array(12).fill(null),note:"12 reps per side — all reps one side before switching."},
-        {id:"lat_pulldown",name:"Lat Pulldown",weights:[100,105,110,110,120,125,130,135,140,145,150,100],sets:[3,3,3,3,4,4,4,4,3,3,3,3],reps:["12","12","12","12","8","8","6","6","8","8","8","10"],backoff:Array(12).fill(null),note:"Full arm extension at the top on every rep."}
+        {id:"lat_raise",name:"Cable Lateral Raise",weights:[10,10,10,10,12.5,12.5,15,15,17.5,17.5,20,10],sets:[3,3,3,3,4,4,4,4,3,3,3,3],reps:["12","12","12","15","12","12","12","12","12","12","12","10"],backoff:Array(12).fill(null)},
+        {id:"lat_pulldown",name:"Lat Pulldown",weights:[100,105,110,110,120,125,130,135,140,145,150,100],sets:[3,3,3,3,4,4,4,4,3,3,3,3],reps:["12","12","12","12","8","8","6","6","8","8","8","10"],backoff:Array(12).fill(null)}
       ]}
     ]
   },
@@ -236,15 +242,15 @@ const PLAN={
     groups:[
       {label:"Straight Sets",rest:"Rest 2 min",supersetted:false,exercises:[
         {id:"trap_bar",name:"Trap Bar Deadlift",weights:[185,195,205,215,235,245,255,265,275,285,295,185],sets:[4,4,4,4,5,5,5,5,4,3,3,3],reps:["10","10","10","10","5","5","5","5","4","3","2-3","8"],backoff:[null,null,null,null,null,null,null,null,null,{sets:2,reps:"6",w:225},{sets:3,reps:"5",w:230},null]},
-        {id:"leg_press",name:"Leg Press (total load)",weights:[300,340,370,360,410,440,470,500,530,560,590,300],sets:[4,4,4,4,5,5,5,5,4,3,3,3],reps:["10","10","10","10","6","5","5","5","4","3","2-3","8"],backoff:[null,null,null,null,null,null,null,null,null,{sets:2,reps:"5",w:460},{sets:3,reps:"5",w:490},null],note:"Total load including carriage."}
+        {id:"leg_press",name:"Leg Press (total load)",weights:[300,340,370,360,410,440,470,500,530,560,590,300],sets:[4,4,4,4,5,5,5,5,4,3,3,3],reps:["10","10","10","10","6","5","5","5","4","3","2-3","8"],backoff:[null,null,null,null,null,null,null,null,null,{sets:2,reps:"5",w:460},{sets:3,reps:"5",w:490},null]}
       ]},
       {label:"Superset 1",rest:"Rest 90s",supersetted:true,exercises:[
-        {id:"rdl",name:"Romanian Deadlift",weights:[110,120,130,135,150,160,170,180,185,195,205,110],sets:[3,3,3,3,4,4,4,4,3,3,3,3],reps:["12","12","12","12","8","8","6","6","5","5","5","8"],backoff:Array(12).fill(null),note:"Use a loadable bar to progress freely."},
-        {id:"calf",name:"Standing Calf Raise",weights:[90,105,115,105,125,135,145,155,150,160,170,90],sets:[3,3,3,3,4,4,4,4,3,3,3,3],reps:["15","15","15","20","12","12","12","12","15","15","15","12"],backoff:Array(12).fill(null),note:"Stand on plate with heels hanging off. Full ROM every rep."}
+        {id:"rdl",name:"Romanian Deadlift",weights:[110,120,130,135,150,160,170,180,185,195,205,110],sets:[3,3,3,3,4,4,4,4,3,3,3,3],reps:["12","12","12","12","8","8","6","6","5","5","5","8"],backoff:Array(12).fill(null)},
+        {id:"calf",name:"Standing Calf Raise",weights:[90,105,115,105,125,135,145,155,150,160,170,90],sets:[3,3,3,3,4,4,4,4,3,3,3,3],reps:["15","15","15","20","12","12","12","12","15","15","15","12"],backoff:Array(12).fill(null)}
       ]},
       {label:"Superset 2",rest:"Rest 60s",supersetted:true,exercises:[
-        {id:"leg_ext",name:"Leg Extension",weights:[110,115,120,125,130,135,140,145,145,150,155,110],sets:[3,3,3,3,4,4,4,4,3,3,3,3],reps:["12","12","12","12","10","10","10","10","12","12","12","10"],backoff:Array(12).fill(null),note:"Both legs simultaneously. Full ROM over load."},
-        {id:"leg_curl",name:"Lying Leg Curl",weights:[70,75,80,85,90,95,100,105,110,115,120,70],sets:[3,3,3,3,4,4,4,4,3,3,3,3],reps:["12","12","12","12","10","10","10","10","12","12","12","10"],backoff:Array(12).fill(null),note:"Both legs simultaneously. Keep ROM full."}
+        {id:"leg_ext",name:"Leg Extension",weights:[110,115,120,125,130,135,140,145,145,150,155,110],sets:[3,3,3,3,4,4,4,4,3,3,3,3],reps:["12","12","12","12","10","10","10","10","12","12","12","10"],backoff:Array(12).fill(null)},
+        {id:"leg_curl",name:"Lying Leg Curl",weights:[70,75,80,85,90,95,100,105,110,115,120,70],sets:[3,3,3,3,4,4,4,4,3,3,3,3],reps:["12","12","12","12","10","10","10","10","12","12","12","10"],backoff:Array(12).fill(null)}
       ]}
     ]
   }
@@ -268,7 +274,7 @@ const BENCH_FIELDS={
     {id:"pushdown",label:"Cable Tricep Pushdown",hint:"4 × 12",step:2.5,min:5,default:30,unit:"lbs"},
     {id:"skull",label:"EZ Bar Skull Crushers",hint:"4 × 12",step:5,min:20,default:50,unit:"lbs"},
     {id:"fly",label:"Cable Fly (per side)",hint:"3 × 12",step:2.5,min:2.5,default:15,unit:"lbs"},
-    {id:"kickback",label:"Cable Kickback",hint:"3 × 12",step:2.5,min:2.5,default:12.5,unit:"lbs"},
+    {id:"kickback",label:"Single-Arm Cable Kickback (per arm)",hint:"3 × 12 per side",step:2.5,min:2.5,default:10,unit:"lbs"},
   ],
   back_shoulder_bi:[
     {id:"pullup_reps",label:"Pull-up max reps",hint:"Bodyweight, strict dead hang",step:1,min:0,default:5,unit:"reps"},
@@ -649,45 +655,70 @@ function SettingsScreen({session,userProgress,onBack,onSave}){
   );
 }
 
-// ── REST TIMER ─────────────────────────────────────────────────────────
-function RestTimer({timer,accent,onSkip}){
-  if(!timer) return null;
-  const{seconds,total,label,done:td}=timer;
-  const r=30,circ=2*Math.PI*r,offset=circ*(seconds/total);
+// ── SIMPLE STOPWATCH ───────────────────────────────────────────────────
+function SimpleStopwatch(){
+  const[elapsed,setElapsed]=useState(0);
+  const[running,setRunning]=useState(false);
+  const ref=useRef(null);
+  useEffect(()=>{
+    if(running){ref.current=setInterval(()=>setElapsed(p=>p+1),1000);}
+    else{clearInterval(ref.current);}
+    return()=>clearInterval(ref.current);
+  },[running]);
+  const mm=String(Math.floor(elapsed/60)).padStart(2,'0');
+  const ss=String(elapsed%60).padStart(2,'0');
   return(
-    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:"480px",zIndex:100,background:"rgba(28,28,30,0.92)",backdropFilter:"blur(32px)",WebkitBackdropFilter:"blur(32px)",borderTop:`0.5px solid ${DS.sep}`,padding:"16px 20px 28px",display:"flex",alignItems:"center",gap:"20px",fontFamily:DS.font}}>
-      <div style={{position:"relative",width:"72px",height:"72px",flexShrink:0}}>
-        <svg width="72" height="72" style={{transform:"rotate(-90deg)"}}>
-          <circle cx="36" cy="36" r={r} fill="none" stroke={DS.surfaceEl2} strokeWidth="3.5"/>
-          <circle cx="36" cy="36" r={r} fill="none" stroke={td?DS.green:accent} strokeWidth="3.5" strokeDasharray={circ} strokeDashoffset={circ-offset} strokeLinecap="round" style={{transition:"stroke-dashoffset 1s linear,stroke 0.3s"}}/>
-        </svg>
-        <div style={{position:"absolute",top:0,left:0,width:"72px",height:"72px",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:DS.fontMono,fontSize:td?"14px":"24px",fontWeight:td?600:300,color:td?DS.green:DS.label,letterSpacing:"-1px"}}>{td?"GO":seconds}</div>
-      </div>
-      <div style={{flex:1}}>
-        <div style={{fontSize:"17px",fontWeight:600,color:DS.label,marginBottom:"2px"}}>{td?"Rest complete":"Resting"}</div>
-        <div style={{fontSize:"14px",color:DS.labelSec}}>{label}</div>
-        {!td&&<div style={{fontSize:"12px",color:DS.labelTert,marginTop:"2px"}}>{total}s · {total-seconds}s elapsed</div>}
-      </div>
-      <Btn onPress={onSkip} style={{background:DS.fillTert,borderRadius:DS.r8,padding:"8px 16px",fontSize:"15px",fontWeight:500,color:DS.labelSec}}>{td?"Close":"Skip"}</Btn>
-    </div>
+    <Btn onPress={()=>{if(running){setRunning(false);setElapsed(0);}else setRunning(true);}} style={{background:running?"rgba(255,159,10,0.15)":DS.fillTert,border:running?`0.5px solid ${DS.orange}`:"none",borderRadius:"20px",padding:"5px 12px",display:"flex",alignItems:"center",gap:"6px",color:running?DS.orange:DS.labelTert,fontSize:"13px",fontFamily:DS.fontMono,fontWeight:300,letterSpacing:"0.5px",transition:"all 0.2s"}}>
+      {Ico.timer(13)}
+      <span>{running?`${mm}:${ss}`:"timer"}</span>
+    </Btn>
   );
 }
 
 // ── COMPLETION OVERLAY ─────────────────────────────────────────────────
-function CompletionOverlay({day,week,message,onClose}){
+function CompletionOverlay({day,week,message,aiSummary,completedSets,totalVolume,onClose}){
+  const nextPhase=PHASES[Math.min(week,11)];
+  const nextPhaseColor=PHASE_COLORS[nextPhase]||DS.labelTert;
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.96)",backdropFilter:"blur(40px)",WebkitBackdropFilter:"blur(40px)",zIndex:200,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 32px",fontFamily:DS.font}}>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",backdropFilter:"blur(40px)",WebkitBackdropFilter:"blur(40px)",zIndex:200,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 24px",fontFamily:DS.font,overflowY:"auto"}}>
       <div style={{width:"100%",maxWidth:"360px",textAlign:"center"}}>
-        {/* Large checkmark ring */}
-        <div style={{width:"96px",height:"96px",borderRadius:"50%",background:`${day.accent}18`,border:`2px solid ${day.accent}40`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 28px",color:day.accent}}>
-          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        {/* Checkmark */}
+        <div style={{width:"72px",height:"72px",borderRadius:"50%",background:`${day.accent}18`,border:`2px solid ${day.accent}40`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",color:day.accent}}>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
         </div>
-        <div style={{fontSize:"32px",fontWeight:700,color:DS.label,letterSpacing:"-0.5px",marginBottom:"6px"}}>Workout Complete</div>
-        <div style={{fontSize:"13px",color:day.accent,fontWeight:500,letterSpacing:"0.5px",marginBottom:"28px",textTransform:"uppercase"}}>Week {week} · {day.label} · {PHASES[week-1]}</div>
-        <div style={{fontSize:"16px",color:DS.labelSec,lineHeight:1.65,marginBottom:"40px"}}>{message}</div>
-        <Btn onPress={onClose} style={{width:"100%",height:"50px",background:day.accent,borderRadius:DS.r12,color:"#000",fontSize:"17px",fontWeight:600,letterSpacing:"-0.2px"}}>Keep Going</Btn>
+        <div style={{fontSize:"26px",fontWeight:700,color:DS.label,letterSpacing:"-0.5px",marginBottom:"4px"}}>Workout Complete</div>
+        <div style={{fontSize:"12px",color:day.accent,fontWeight:600,letterSpacing:"0.5px",marginBottom:"20px",textTransform:"uppercase"}}>Week {week} · {day.label}</div>
+
+        {/* Volume stats — the reward numbers */}
+        <div style={{display:"flex",gap:"10px",marginBottom:"20px"}}>
+          <div style={{flex:1,background:DS.surface,borderRadius:DS.r12,padding:"14px 10px"}}>
+            <div style={{fontFamily:DS.fontMono,fontSize:"28px",fontWeight:300,color:DS.label,letterSpacing:"-1px",lineHeight:1}}>{completedSets}</div>
+            <div style={{fontSize:"11px",color:DS.labelTert,marginTop:"3px"}}>sets completed</div>
+          </div>
+          {totalVolume>0&&<div style={{flex:1,background:DS.surface,borderRadius:DS.r12,padding:"14px 10px"}}>
+            <div style={{fontFamily:DS.fontMono,fontSize:"28px",fontWeight:300,color:day.accent,letterSpacing:"-1px",lineHeight:1}}>{totalVolume>=1000?`${(totalVolume/1000).toFixed(1)}k`:totalVolume}</div>
+            <div style={{fontSize:"11px",color:DS.labelTert,marginTop:"3px"}}>lbs moved</div>
+          </div>}
+        </div>
+
+        <div style={{fontSize:"14px",color:DS.labelSec,lineHeight:1.65,marginBottom:"16px"}}>{message}</div>
+
+        {/* AI plan update card */}
+        <div style={{background:DS.surface,borderRadius:DS.r12,padding:"14px 16px",marginBottom:"20px",textAlign:"left"}}>
+          <div style={{fontSize:"10px",fontWeight:700,color:DS.labelTert,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:"6px"}}>Plan Update</div>
+          <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.6}}>
+            {aiSummary||"Reviewing your session ratings…"}
+          </div>
+        </div>
+
+        {/* Next session teaser */}
+        {week<12&&<div style={{fontSize:"12px",color:DS.labelTert,marginBottom:"20px"}}>
+          Next up: <span style={{color:nextPhaseColor,fontWeight:500}}>Week {week+1} · {nextPhase}</span>
+        </div>}
+
+        <Btn onPress={onClose} style={{width:"100%",height:"50px",background:day.accent,borderRadius:DS.r12,color:day.accent===DS.blue?"#fff":"#000",fontSize:"17px",fontWeight:600}}>Keep Going</Btn>
       </div>
     </div>
   );
@@ -698,7 +729,7 @@ function OrientationCard({accent,onDismiss}){
   const items=[
     {icon:"⚡",title:"Supersets",body:"Two exercises are grouped together. Alternate between them — do a set of the first, then immediately a set of the second. Rest after completing both. More efficient than resting between every individual set."},
     {icon:"🎯",title:"2 Reps in Reserve",body:"Stop when you have 2 reps left before failure. If your max is 12, stop at 10. This protects your form and recovery so you perform consistently across all sets."},
-    {icon:"⏱",title:"Rest Timer",body:"After completing the last set of each exercise, the rest timer fires automatically. You can also start it manually with the timer button on any group."},
+    {icon:"⏱",title:"Rest Between Sets",body:"After finishing a set you'll see the recommended rest time. Use your phone's stopwatch or the in-app timer button if you want to track it — but trust your body. Ready when your breathing normalises."},
   ];
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",backdropFilter:"blur(40px)",WebkitBackdropFilter:"blur(40px)",zIndex:150,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 20px",overflowY:"auto",fontFamily:DS.font}}>
@@ -924,6 +955,7 @@ export default function App(){
   const[done,setDone]=useState({});
   const[prs,setPRs]=useState({});
   const[ratings,setRatings]=useState({});
+  const[lastCompletedKey,setLastCompletedKey]=useState(null);
   const[cueOpen,setCueOpen]=useState({});
   const[ssOpen,setSSOpen]=useState({});
   const[mobOpen,setMobOpen]=useState(true);
@@ -936,9 +968,9 @@ export default function App(){
   const[loading,setLoading]=useState(false);
   const[w1Loading,setW1Loading]=useState(false);
   const[processingRatings,setProcessingRatings]=useState(false);
-  const[timer,setTimer]=useState(null);
   const[showComplete,setShowComplete]=useState(false);
   const[completionMsg,setCompletionMsg]=useState("");
+  const[completionAiSummary,setCompletionAiSummary]=useState("");
   const[completedSessions,setCompletedSessions]=useState([]);
   const[showOrientation,setShowOrientation]=useState(false);
   const[showGapPrompt,setShowGapPrompt]=useState(false);
@@ -947,7 +979,6 @@ export default function App(){
   const[exSettings,setExSettings]=useState({});
   const[focusMode,setFocusMode]=useState(false);
   const[focusGi,setFocusGi]=useState(-1);
-  const timerRef=useRef(null);
 
   useEffect(()=>{
     supabase.auth.getSession().then(({data:{session}})=>{setSession(session);setAuthReady(true);});
@@ -983,18 +1014,23 @@ export default function App(){
   };
   useEffect(()=>{if(session) loadProgress();},[session]);
 
-  useEffect(()=>{
-    if(timerRef.current){clearInterval(timerRef.current);timerRef.current=null;}
-    if(timer&&!timer.done){
-      timerRef.current=setInterval(()=>{setTimer(prev=>{if(!prev||prev.done)return prev;if(prev.seconds<=1){clearInterval(timerRef.current);playBeep();return{...prev,seconds:0,done:true};}return{...prev,seconds:prev.seconds-1};});},1000);
-    }
-    return()=>{if(timerRef.current)clearInterval(timerRef.current);};
-  },[timer?.done,timer?.total]);
-
-  const startTimer=(restStr,label)=>{if(timerRef.current)clearInterval(timerRef.current);setTimer({seconds:parseRest(restStr),total:parseRest(restStr),label,done:false});};
-  const skipTimer=()=>{if(timerRef.current)clearInterval(timerRef.current);setTimer(null);};
   const dismissOrientation=async()=>{setShowOrientation(false);if(session)await supabase.from("user_progress").upsert({user_id:session.user.id,has_seen_orientation:true,updated_at:new Date().toISOString()});};
   const handleGapResume=async(w)=>{setShowGapPrompt(false);setWeek(w);if(session)await supabase.from("user_progress").upsert({user_id:session.user.id,current_week:w,updated_at:new Date().toISOString()});};
+
+  // Smart focus re-entry: find first incomplete group, or last group if all done
+  const getResumeGi=(dayData,wi)=>{
+    for(let gi=0;gi<dayData.groups.length;gi++){
+      const grp=dayData.groups[gi];
+      const anyStarted=grp.exercises.some(ex=>getCC(ex.id,ex.sets[wi],false)>0);
+      const allDone2=grp.exercises.every(ex=>getCC(ex.id,ex.sets[wi],false)>=ex.sets[wi]);
+      if(anyStarted&&!allDone2) return gi;
+      if(anyStarted) continue; // done, check next
+      if(!anyStarted&&gi>0) return gi; // first untouched after some progress
+    }
+    // check if any group has started at all
+    const anyProgress=dayData.groups.some(g=>g.exercises.some(ex=>getCC(ex.id,ex.sets[wi],false)>0));
+    return anyProgress?dayData.groups.length-1:-1; // -1 = start from mobility
+  };
 
   const getW=(exId,wi)=>{const k=`${tab}_w${week}_${exId}`;if(adj[k]!==undefined)return adj[k];const ex=PLAN[tab].groups.flatMap(g=>g.exercises).find(e=>e.id===exId);return ex?ex.weights[wi]:0;};
   const getPrevW=(exId,wi)=>{if(wi===0)return null;const k=`${tab}_w${week-1}_${exId}`;if(adj[k]!==undefined)return adj[k];const ex=PLAN[tab].groups.flatMap(g=>g.exercises).find(e=>e.id===exId);return ex?ex.weights[wi-1]:0;};
@@ -1014,7 +1050,8 @@ export default function App(){
     const pre=isBO?`${tab}_w${week}_${exId}_bo`:`${tab}_w${week}_${exId}_s`;const dbPre=isBO?`${exId}_bo`:`${exId}_s`;
     let ni=0;while(ni<totalSets&&done[`${pre}${ni}`])ni++;if(ni>=totalSets)return;
     setDone(p=>{const n={...p,[`${pre}${ni}`]:true};saveToLocal(session?.user?.id,n);return n;});
-    startTimer(groupRest,`${groupLabel} · Set ${ni+1} done`);
+    setLastCompletedKey(`${pre}${ni}`);
+    setTimeout(()=>setLastCompletedKey(null),400);
     saveSetToDb(tab,week,`${dbPre}${ni}`,true);
   };
   const undoLastSet=(exId,totalSets,isBO=false)=>{
@@ -1024,8 +1061,8 @@ export default function App(){
     saveSetToDb(tab,week,`${dbPre}${li}`,false);
   };
   const setRating=(exId,r)=>{setRatings(p=>({...p,[`${tab}_w${week}_${exId}`]:r}));if(session)supabase.from("exercise_ratings").upsert({user_id:session.user.id,day:tab,week,exercise_id:exId,rating:r},{onConflict:"user_id,day,week,exercise_id"});};
-  const changeWeek=(w)=>{const c=Math.max(1,Math.min(12,w));setWeek(c);setAiRes(null);setFeedback("");setW1Feedback("");setW1AiRes(null);setMobOpen(true);skipTimer();setEditingW(null);if(session)supabase.from("user_progress").upsert({user_id:session.user.id,current_week:c,updated_at:new Date().toISOString()});};
-  const changeTab=(t)=>{setTab(t);setAiRes(null);setFeedback("");setW1Feedback("");setW1AiRes(null);setMobOpen(true);skipTimer();setEditingW(null);if(session)supabase.from("user_progress").upsert({user_id:session.user.id,current_day:t,updated_at:new Date().toISOString()});};
+  const changeWeek=(w)=>{const c=Math.max(1,Math.min(12,w));setWeek(c);setAiRes(null);setFeedback("");setW1Feedback("");setW1AiRes(null);setMobOpen(true);setEditingW(null);if(session)supabase.from("user_progress").upsert({user_id:session.user.id,current_week:c,updated_at:new Date().toISOString()});};
+  const changeTab=(t)=>{setTab(t);setAiRes(null);setFeedback("");setW1Feedback("");setW1AiRes(null);setMobOpen(true);setEditingW(null);if(session)supabase.from("user_progress").upsert({user_id:session.user.id,current_day:t,updated_at:new Date().toISOString()});};
   const applyAi=async(aiAdj)=>{const n={...adj};const rows=[];for(const[id,w] of Object.entries(aiAdj)){n[`${tab}_w${week}_${id}`]=w;rows.push({user_id:session?.user.id,day:tab,week,exercise_id:id,weight:w,updated_at:new Date().toISOString()});}setAdj(n);setAiRes(null);setFeedback("");if(session&&rows.length)await supabase.from("weight_adjustments").upsert(rows,{onConflict:"user_id,day,week,exercise_id"});};
   const applyW1Recal=async(adjustments)=>{
     const n={...adj};const rows=[];const changes=[];
@@ -1040,13 +1077,22 @@ export default function App(){
   };
   const processRatings=async()=>{
     const dayRatings=Object.entries(ratings).filter(([k])=>k.startsWith(`${tab}_w${week}_`));
-    if(dayRatings.length===0) return;
     setProcessingRatings(true);
     const day=PLAN[tab];const wi=week-1;
+    if(dayRatings.length===0){setProcessingRatings(false);return "No ratings collected this session.";}
     const lines=dayRatings.map(([k,r])=>{const exId=k.split('_').slice(3).join('_');const fe=day.groups.flatMap(g=>g.exercises).find(e=>e.id===exId);return `${fe?.name||exId}: ${getW(exId,wi)}lbs — ${r}`;}).join("\n");
     const ids=day.groups.flatMap(g=>g.exercises.map(e=>e.id)).join(",");
+    const prompt=`You are a strength coach. Week ${week}/12, ${PHASES[wi]} phase. The user just finished their workout and rated each exercise. Your job is two things: adjust next week's weights if needed, and write a brief 1-2 sentence human summary for the completion screen.
+
+Ratings:
+${lines}
+
+Science-based rules: Failing last 1-2 reps of last set = normal progressive overload, no weight change needed. Too easy = increase 2.5-5lbs. Too hard (failing early sets) = decrease 2.5-5lbs. Just right = no change.
+
+Return ONLY valid JSON, no markdown:
+{"summary":"1-2 sentences. Acknowledge what went well. If no changes needed, say so and briefly explain why (e.g. last-rep failure is expected). Warm but direct tone.","adjustments":{/* id: new_weight for week ${week+1}. Only exercises that genuinely need changing. IDs: ${ids} */}}`;
     try{
-      const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:500,messages:[{role:"user",content:`Strength coach. Week ${week}/12, ${PHASES[wi]} phase. User rated exercises post-workout.\n\nRatings:\n${lines}\n\nReturn ONLY valid JSON:\n{"analysis":"one sentence","adjustments":{/* id: new_weight for next week. Too easy=+2.5-5lbs, Too hard=-2.5-5lbs, Just right=no change. IDs: ${ids} */}}\n\nRound to 2.5lbs.`}]})});
+      const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,messages:[{role:"user",content:prompt}]})});
       const data=await res.json();const text=data.content.filter(b=>b.type==="text").map(b=>b.text).join("");
       const parsed=JSON.parse(text.replace(/```json|```/g,"").trim());
       if(parsed.adjustments&&Object.keys(parsed.adjustments).length>0){
@@ -1054,24 +1100,33 @@ export default function App(){
         for(const[id,nw] of Object.entries(parsed.adjustments)){const nx=week+1;if(nx<=12){n[`${tab}_w${nx}_${id}`]=nw;rows.push({user_id:session?.user.id,day:tab,week:nx,exercise_id:id,weight:nw,updated_at:new Date().toISOString()});}}
         setAdj(n);if(session&&rows.length)await supabase.from("weight_adjustments").upsert(rows,{onConflict:"user_id,day,week,exercise_id"});
       }
-    }catch(e){console.error("Rating processing failed:",e);}
-    setProcessingRatings(false);
+      setProcessingRatings(false);
+      return parsed.summary||"Good session. Weights are on track.";
+    }catch(e){console.error("Rating processing failed:",e);setProcessingRatings(false);return "Good session. Keep the weights for next week and focus on form.";}
   };
   const NEXT_TAB={chest_tri:'back_shoulder_bi',back_shoulder_bi:'legs',legs:'chest_tri'};
   const handleFinishWorkout=async()=>{
+    // Calculate session stats for completion screen
+    const sessionSets=day.groups.flatMap(g=>g.exercises).reduce((sum,ex)=>{
+      const s=ex.sets[wi];const cc=getCC(ex.id,s,false);return sum+cc;},0);
+    const sessionVol=day.groups.flatMap(g=>g.exercises).reduce((sum,ex)=>{
+      const s=ex.sets[wi];const cc=getCC(ex.id,s,false);const w=getW(ex.id,wi);
+      const r=parseInt(ex.reps[wi])||10;return sum+(ex.isPullup?0:cc*r*w);},0);
     setCompletionMsg(COMPLETE_MSGS[(week+Object.keys(done).filter(k=>done[k]).length)%COMPLETE_MSGS.length]);
+    setCompletionAiSummary("");
     const sessionKey=`${tab}_w${week}`;const updated=[...new Set([...completedSessions,sessionKey])];
     setCompletedSessions(updated);
     const allDone=['chest_tri','back_shoulder_bi','legs'].every(t=>updated.includes(`${t}_w${week}`));
     const newLast=allDone?week:(userProgress?.last_completed_week||0);
     if(session) await supabase.from("user_progress").upsert({user_id:session.user.id,completed_sessions:updated,last_completed_week:newLast,updated_at:new Date().toISOString()});
-    await processRatings();setShowComplete(true);
+    setShowComplete({sets:sessionSets,volume:Math.round(sessionVol)});
+    const summary=await processRatings();
+    setCompletionAiSummary(summary);
   };
   const handleKeepGoing=()=>{
     setShowComplete(false);const nextT=NEXT_TAB[tab];const nextW=nextT==='chest_tri'?Math.min(12,week+1):week;
     changeTab(nextT);if(nextW!==week)changeWeek(nextW);window.scrollTo({top:0,behavior:'smooth'});
-  };
-  const handleFeedback=async()=>{
+  };  const handleFeedback=async()=>{
     if(!feedback.trim()||loading) return;
     setLoading(true);setAiRes(null);
     const day=PLAN[tab];const wi=week-1;
@@ -1115,7 +1170,7 @@ export default function App(){
   const RATING_OPTS=[{v:"too_easy",label:"Too Easy",color:DS.green},{v:"just_right",label:"Just Right",color:DS.orange},{v:"too_hard",label:"Too Hard",color:DS.red}];
 
   return(
-    <div style={{background:DS.bg,minHeight:"100vh",color:DS.label,maxWidth:"480px",margin:"0 auto",paddingBottom:timer?"180px":"100px",fontFamily:DS.font}}>
+    <div style={{background:DS.bg,minHeight:"100vh",color:DS.label,maxWidth:"480px",margin:"0 auto",paddingBottom:"100px",fontFamily:DS.font}}>
       <style>{`
         html,body{background:#000;margin:0;padding:0;min-height:100vh;}
         *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:pan-y;}
@@ -1125,16 +1180,21 @@ export default function App(){
         button:active{opacity:0.65;transform:scale(0.97);}
         .reveal{animation:reveal 0.2s ease;}
         @keyframes reveal{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+        .dotPop{animation:dotPop 0.28s cubic-bezier(0.34,1.56,0.64,1);}
+        @keyframes dotPop{0%{transform:scale(0.4);opacity:0.3}60%{transform:scale(1.4)}100%{transform:scale(1);opacity:1}}
+        .barFill{transition:width 0.35s cubic-bezier(0.34,1.2,0.64,1);}
+        .setBtnDone{animation:setBtnDone 0.22s ease;}
+        @keyframes setBtnDone{0%{transform:scale(0.95)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
       `}</style>
 
       {showOrientation&&<OrientationCard accent={day.accent} onDismiss={dismissOrientation}/>}
       {showGapPrompt&&<GapResumePrompt calculatedWeek={gapCalcWeek} lastCompletedWeek={gapLastWeek} onResume={handleGapResume} onAdjust={()=>{setShowGapPrompt(false);setScreen("settings");}}/>}
-      {showComplete&&<CompletionOverlay day={day} week={week} message={completionMsg} onClose={handleKeepGoing}/>}
+      {showComplete&&<CompletionOverlay day={day} week={week} message={completionMsg} aiSummary={completionAiSummary} completedSets={showComplete?.sets||0} totalVolume={showComplete?.volume||0} onClose={handleKeepGoing}/>}
 
       {/* ── NAV BAR ── */}
       <div style={{position:"sticky",top:0,zIndex:20,background:"rgba(0,0,0,0.85)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderBottom:`0.5px solid ${DS.sep}`}}>
         {focusMode?(
-          /* Focus mode: minimal — day name, completion %, prominent exit */
+          /* Focus mode: minimal — day name, completion %, stopwatch, exit */
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px"}}>
             <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
               <div style={{width:"8px",height:"8px",borderRadius:"50%",background:day.accent,flexShrink:0}}/>
@@ -1142,6 +1202,7 @@ export default function App(){
               <span style={{fontSize:"13px",color:DS.labelTert}}>Wk {week}</span>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+              <SimpleStopwatch/>
               <span style={{fontFamily:DS.fontMono,fontSize:"13px",color:pct===100?DS.green:DS.labelSec}}>{pct}%</span>
               <Btn onPress={()=>setFocusMode(false)} style={{background:"transparent",border:`1px solid ${DS.sep}`,borderRadius:"14px",padding:"6px 16px",color:DS.labelSec,fontSize:"14px",fontWeight:500}}>Exit</Btn>
             </div>
@@ -1179,6 +1240,29 @@ export default function App(){
                 <IconBtn onPress={()=>setScreen("progress")} icon={Ico.chart(18)} tint={DS.labelSec}/>
                 <IconBtn onPress={()=>setScreen("settings")} icon={Ico.settings(18)} tint={DS.labelSec}/>
                 <IconBtn onPress={()=>supabase.auth.signOut()} icon={Ico.logout(17)} tint={DS.labelTert}/>
+              </div>
+            </div>
+            {/* Week calendar — tells a story: built/building/ahead */}
+            <div style={{padding:"0 16px 8px"}}>
+              <div style={{display:"flex",gap:"2px"}}>
+                {Array(12).fill(null).map((_,i)=>{
+                  const wk=i+1;
+                  const allDone=['chest_tri','back_shoulder_bi','legs'].every(t=>completedSessions.includes(`${t}_w${wk}`));
+                  const isCurrent=wk===week;
+                  const phaseColor=PHASE_SEGS.find(s=>s.weeks.includes(wk))?.color||DS.labelTert;
+                  const isPast=wk<week&&!isCurrent;
+                  return(
+                    <Btn key={wk} onPress={()=>changeWeek(wk)} style={{flex:1,height:"20px",borderRadius:"4px",
+                      background:allDone?`${phaseColor}55`:isCurrent?`${day.accent}30`:isPast?`${phaseColor}20`:DS.surfaceEl,
+                      border:`0.5px solid ${allDone?phaseColor:isCurrent?day.accent:"transparent"}`,
+                      display:"flex",alignItems:"center",justifyContent:"center",padding:0,transition:"all 0.2s",
+                      boxShadow:isCurrent?`0 0 6px ${day.accent}60`:"none"}}>
+                      <span style={{fontSize:"7px",fontFamily:DS.fontMono,
+                        color:allDone?phaseColor:isCurrent?day.accent:isPast?`${phaseColor}80`:DS.labelTert,
+                        fontWeight:isCurrent||allDone?700:400}}>{allDone?"✓":wk}</span>
+                    </Btn>
+                  );
+                })}
               </div>
             </div>
             {/* Day tabs */}
@@ -1228,7 +1312,8 @@ export default function App(){
             <div style={{padding:"10px 14px",marginBottom:"12px",background:DS.surface,borderRadius:DS.r10}}>
               <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.5}}>{day.notes[wi]}</div>
             </div>
-            <Btn onPress={()=>{setFocusMode(true);setFocusGi(-1);window.scrollTo({top:0,behavior:'smooth'});}} style={{width:"100%",height:"50px",background:day.accent,borderRadius:DS.r12,color:day.accent===DS.blue?"#fff":"#000",fontSize:"17px",fontWeight:600,marginBottom:"24px",letterSpacing:"-0.2px",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}>
+            {/* Floating sticky CTA — always visible, never competes with set logging */}
+            <Btn onPress={()=>{const gi=getResumeGi(day,wi);setFocusMode(true);setFocusGi(gi);window.scrollTo({top:0,behavior:'smooth'});}} style={{width:"100%",height:"52px",background:day.accent,borderRadius:DS.r12,color:day.accent===DS.blue?"#fff":"#000",fontSize:"17px",fontWeight:600,marginBottom:"24px",letterSpacing:"-0.2px",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px",boxShadow:`0 4px 20px ${day.accent}40`}}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
               Start Workout
             </Btn>
@@ -1265,6 +1350,32 @@ export default function App(){
             );
           }
 
+          // Core step (after last exercise group)
+          if(focusGi===day.groups.length){
+            return(
+              <div style={{marginBottom:"24px"}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px"}}>
+                  <div>
+                    <div style={{fontSize:"15px",fontWeight:600,color:DS.label,marginBottom:"2px"}}>Core Finisher</div>
+                    <div style={{fontSize:"11px",color:DS.labelTert}}>Your standard routine · complete before leaving</div>
+                  </div>
+                </div>
+                <div style={{background:DS.surface,borderRadius:DS.r12,padding:"16px",marginBottom:"16px"}}>
+                  <div style={{fontSize:"14px",color:DS.labelSec,lineHeight:1.6}}>Complete your standard core routine now. This is the final step of today's workout.</div>
+                </div>
+                <div style={{display:"flex",gap:"8px"}}>
+                  <Btn onPress={()=>setFocusGi(p=>p-1)} style={{flex:1,height:"44px",background:DS.surface,borderRadius:DS.r10,color:DS.labelSec,fontSize:"15px",fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>
+                    {Ico.chevLeft(14)}<span>Back</span>
+                  </Btn>
+                  <Btn onPress={handleFinishWorkout} disabled={processingRatings} style={{flex:2,height:"44px",background:DS.green,borderRadius:DS.r10,color:"#000",fontSize:"15px",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>
+                    <span>{processingRatings?"Processing…":"End Workout"}</span>
+                    {!processingRatings&&Ico.check(14)}
+                  </Btn>
+                </div>
+              </div>
+            );
+          }
+
           // Steps 0+: exercise groups
           const group=day.groups[focusGi];
           const isLast=focusGi===day.groups.length-1;
@@ -1276,13 +1387,17 @@ export default function App(){
                 <span style={{fontSize:"15px",fontWeight:600,color:day.accent}}>{group.label}</span>
                 <span style={{fontSize:"12px",color:DS.labelTert}}>{focusGi+1} of {day.groups.length}</span>
               </div>
-              {group.supersetted&&<Btn onPress={()=>setSSOpen(p=>({...p,[focusGi]:!p[focusGi]}))} style={{background:ssOpen[focusGi]?`${day.accent}18`:DS.fillTert,borderRadius:"12px",padding:"3px 10px",color:ssOpen[focusGi]?day.accent:DS.labelTert,fontSize:"11px",fontWeight:500}}>
-                {ssOpen[focusGi]?"hide":"what's a superset?"}
-              </Btn>}
+              <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                {group.supersetted&&<Btn onPress={()=>setSSOpen(p=>({...p,[focusGi]:!p[focusGi]}))} style={{background:ssOpen[focusGi]?`${day.accent}18`:DS.fillTert,borderRadius:"12px",padding:"3px 10px",color:ssOpen[focusGi]?day.accent:DS.labelTert,fontSize:"11px",fontWeight:500}}>
+                  {ssOpen[focusGi]?"hide":"what's a superset?"}
+                </Btn>}
+                {/* Rest duration */}
+                <span style={{fontSize:"12px",color:DS.labelTert}}>{group.rest}</span>
+              </div>
             </div>
-              {/* Render only this group's exercises */}
-              {group.supersetted&&(
-                <div style={{background:DS.surface,borderRadius:DS.r10,padding:"10px 14px",marginBottom:"10px",borderLeft:`2.5px solid ${day.accent}`}}>
+              {/* Superset definition — hidden by default, toggled */}
+              {group.supersetted&&ssOpen[focusGi]&&(
+                <div className="reveal" style={{background:DS.surface,borderRadius:DS.r10,padding:"10px 14px",marginBottom:"10px",borderLeft:`2.5px solid ${day.accent}`}}>
                   <span style={{fontSize:"14px",fontWeight:600,color:day.accent}}>Superset: </span>
                   <span style={{fontSize:"14px",color:DS.labelSec}}>Alternate between both exercises. Rest {parseRest(group.rest)}s after completing a round of both.</span>
                 </div>
@@ -1320,7 +1435,10 @@ export default function App(){
                           <div style={{fontSize:"11px",fontWeight:700,color:day.accent,letterSpacing:"0.5px",marginBottom:"5px",textTransform:"uppercase"}}>Setup</div>
                           <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.55,marginBottom:"10px"}}>{cues.setup}</div>
                           <div style={{fontSize:"11px",fontWeight:700,color:day.accent,letterSpacing:"0.5px",marginBottom:"5px",textTransform:"uppercase"}}>Cues</div>
-                          <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.55}}>{cues.cues}</div>
+                          <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.55,marginBottom:"10px"}}>{cues.cues}</div>
+                          <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name+' exercise form tutorial')}`} target="_blank" rel="noreferrer" style={{display:"inline-flex",alignItems:"center",gap:"4px",color:day.accent,fontSize:"12px",textDecoration:"none",fontWeight:500}}>
+                            {Ico.play(10)}<span>Watch demo</span>
+                          </a>
                         </div>
                       )}
                       {/* Weight hero */}
@@ -1364,15 +1482,16 @@ export default function App(){
                         </div>
                         <div style={{display:"flex",gap:"8px"}}>
                           {cc<s?(
-                            <Btn onPress={()=>completeNextSet(ex.id,s,group.rest,group.label,false)} style={{flex:1,height:"50px",background:day.accent,borderRadius:DS.r10,color:day.accent===DS.blue?"#fff":"#000",fontSize:"16px",fontWeight:600}}>
-                              Complete Set {cc+1}
+                            <Btn onPress={()=>completeNextSet(ex.id,s,group.rest,group.label,false)} style={{flex:1,height:"64px",background:day.accent,borderRadius:DS.r12,color:day.accent===DS.blue?"#fff":"#000",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"2px",boxShadow:`0 4px 16px ${day.accent}50`}}>
+                              <span style={{fontSize:"12px",fontWeight:500,opacity:0.75,letterSpacing:"0.3px"}}>SET {cc+1} OF {s}</span>
+                              <span style={{fontSize:"22px",fontWeight:700,letterSpacing:"-0.5px"}}>Done ✓</span>
                             </Btn>
                           ):(
-                            <div style={{flex:1,height:"50px",display:"flex",alignItems:"center",justifyContent:"center",background:`${DS.green}12`,borderRadius:DS.r10,gap:"6px",color:DS.green,fontSize:"14px",fontWeight:500}}>
-                              {Ico.check(14)}<span>All sets done</span>
+                            <div style={{flex:1,height:"64px",display:"flex",alignItems:"center",justifyContent:"center",background:`${DS.green}12`,borderRadius:DS.r12,gap:"8px",color:DS.green,fontSize:"16px",fontWeight:600}}>
+                              {Ico.check(16)}<span>All sets done</span>
                             </div>
                           )}
-                          {cc>0&&<Btn onPress={()=>undoLastSet(ex.id,s,false)} style={{height:"50px",width:"50px",background:DS.fillTert,borderRadius:DS.r10,color:DS.labelTert,display:"flex",alignItems:"center",justifyContent:"center"}}>{Ico.undo(15)}</Btn>}
+                          {cc>0&&<Btn onPress={()=>undoLastSet(ex.id,s,false)} style={{height:"64px",width:"56px",background:DS.fillTert,borderRadius:DS.r12,color:DS.labelTert,display:"flex",alignItems:"center",justifyContent:"center"}}>{Ico.undo(15)}</Btn>}
                         </div>
                       </div>
                       {allSetsDone&&(
@@ -1396,21 +1515,8 @@ export default function App(){
                 <Btn onPress={()=>setFocusGi(p=>p-1)} style={{flex:1,height:"44px",background:DS.surface,borderRadius:DS.r10,color:DS.labelSec,fontSize:"15px",fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>
                   {Ico.chevLeft(14)}<span>{focusGi===0?"Mobility":"Previous"}</span>
                 </Btn>
-                {!isLast?(
-                  <Btn onPress={()=>setFocusGi(p=>p+1)} style={{flex:2,height:"44px",background:groupAllDone?day.accent:DS.surfaceEl,borderRadius:DS.r10,color:groupAllDone?(day.accent===DS.blue?"#fff":"#000"):DS.labelSec,fontSize:"15px",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",transition:"all 0.2s"}}>
-                    <span>Next</span>{Ico.chevRight(14)}
-                  </Btn>
-                ):(
-                  <Btn onPress={handleFinishWorkout} disabled={processingRatings} style={{flex:2,height:"44px",background:DS.green,borderRadius:DS.r10,color:"#000",fontSize:"15px",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>
-                    <span>{processingRatings?"Processing…":"End Workout"}</span>
-                    {!processingRatings&&Ico.check(14)}
-                  </Btn>
-                )}
-              </div>
-              {/* Timer */}
-              <div style={{display:"flex",justifyContent:"center",marginTop:"10px"}}>
-                <Btn onPress={()=>startTimer(group.rest,`${group.label} · ${group.rest}`)} style={{background:"none",color:DS.labelTert,fontSize:"13px",display:"flex",alignItems:"center",gap:"5px"}}>
-                  {Ico.timer(13)}<span>Start rest timer ({parseRest(group.rest)}s)</span>
+                <Btn onPress={()=>setFocusGi(p=>p+1)} style={{flex:2,height:"44px",background:groupAllDone?day.accent:DS.surfaceEl,borderRadius:DS.r10,color:groupAllDone?(day.accent===DS.blue?"#fff":"#000"):DS.labelSec,fontSize:"15px",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",transition:"all 0.2s"}}>
+                  <span>{isLast?"Core →":"Next"}</span>{!isLast&&Ico.chevRight(14)}
                 </Btn>
               </div>
             </div>
@@ -1432,9 +1538,7 @@ export default function App(){
                   </Btn>
                 )}
               </div>
-              <Btn onPress={()=>startTimer(group.rest,`${group.label} · ${group.rest}`)} style={{background:DS.fillTert,borderRadius:"14px",padding:"5px 12px",color:DS.labelSec,fontSize:"12px",display:"flex",alignItems:"center",gap:"5px"}}>
-                {Ico.timer(13)}<span>{parseRest(group.rest)}s</span>
-              </Btn>
+              <span style={{fontSize:"12px",color:DS.labelTert}}>{group.rest}</span>
             </div>
             {ssOpen[gi]&&(
               <div className="reveal" style={{background:DS.surface,borderRadius:DS.r10,padding:"12px 14px",marginBottom:"10px",borderLeft:`2.5px solid ${day.accent}`}}>
@@ -1443,7 +1547,7 @@ export default function App(){
               </div>
             )}
 
-            {/* Exercise cards — compact overview design */}
+            {/* Exercise cards — left-accent-bar reference design */}
             {group.exercises.map((ex)=>{
               const w=getW(ex.id,wi);
               const s=ex.sets[wi],r=ex.reps[wi],bo=ex.backoff[wi];
@@ -1456,117 +1560,95 @@ export default function App(){
               const boCount=bo?getCC(ex.id,bo.sets,true):0;
               const currentRating=ratings[`${tab}_w${week}_${ex.id}`];
               const allSetsDone=cc>=s;
+              const prevW=getPrevW(ex.id,wi);
+              const delta=(week>1&&prevW!==null)?Math.round((w-prevW)*10)/10:null;
+              const doneKey=`${tab}_w${week}_${ex.id}_s${cc-1}`;
 
               return(
-                <div key={ex.id} style={{background:DS.surface,borderRadius:DS.r12,overflow:"hidden",marginBottom:"8px"}}>
-                  {/* Progress strip — top of card */}
-                  <div style={{height:"3px",background:DS.surfaceEl}}>
-                    <div style={{height:"100%",width:`${(cc/s)*100}%`,background:allSetsDone?DS.green:day.accent,transition:"width 0.3s ease"}}/>
-                  </div>
-
-                  <div style={{padding:"12px 14px"}}>
-                    {/* Name row */}
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:"6px",flex:1,minWidth:0}}>
-                        <span style={{fontSize:"15px",fontWeight:600,color:DS.label,letterSpacing:"-0.1px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ex.name}</span>
+                <div key={ex.id} style={{background:DS.surface,borderRadius:DS.r12,overflow:"hidden",marginBottom:"8px",display:"flex"}}>
+                  {/* Left accent bar — shows completion state */}
+                  <div style={{width:"3px",flexShrink:0,background:allSetsDone?DS.green:cc>0?day.accent:DS.surfaceEl2,transition:"background 0.3s"}}/>
+                  <div style={{flex:1,padding:"11px 13px"}}>
+                    {/* Single-row: name · weight · sets×reps · dots · action */}
+                    <div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>
+                      {/* Name + badges */}
+                      <div style={{flex:"1 1 auto",minWidth:0,display:"flex",alignItems:"center",gap:"5px"}}>
+                        <span style={{fontSize:"14px",fontWeight:600,color:allSetsDone?DS.labelSec:DS.label,letterSpacing:"-0.1px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",transition:"color 0.2s"}}>{ex.name}</span>
                         {isPR&&<span style={{fontSize:"9px",fontWeight:700,color:"#000",background:day.accent,padding:"1px 5px",borderRadius:"8px",flexShrink:0}}>PR</span>}
-                        {ex.note&&<span style={{fontSize:"11px",color:DS.labelTert,flexShrink:0}}>·</span>}
+                        {delta!==null&&delta!==0&&<span style={{fontSize:"11px",color:delta>0?DS.green:DS.red,fontFamily:DS.fontMono,flexShrink:0}}>{delta>0?`+${delta}`:delta}</span>}
                       </div>
-                      {cues&&<IconBtn onPress={()=>setCueOpen(p=>({...p,[ex.id]:!p[ex.id]}))} icon={Ico.info(14)} tint={isOpen?day.accent:DS.labelTert} bg={isOpen?`${day.accent}15`:DS.fillTert}/>}
+                      {/* Info button */}
+                      {cues&&<IconBtn onPress={()=>setCueOpen(p=>({...p,[ex.id]:!p[ex.id]}))} icon={Ico.info(13)} tint={isOpen?day.accent:DS.labelTert} bg={isOpen?`${day.accent}15`:DS.fillTert}/>}
                     </div>
-
+                    {/* Second row: weight · prescription · progress · action */}
+                    <div style={{display:"flex",alignItems:"center",gap:"6px",marginTop:"6px",flexWrap:"nowrap"}}>
+                      {/* Inline weight with silent −/+ */}
+                      <div style={{display:"flex",alignItems:"center",gap:"3px",flexShrink:0}}>
+                        <Btn onPress={()=>adjustW(ex.id,wi,-1)} style={{color:DS.labelTert,fontSize:"14px",background:"none",padding:"0 2px",lineHeight:1}}>−</Btn>
+                        <div onClick={()=>{setEditingW(ex.id);setEditVal(String(w));}} style={{cursor:"pointer",flexShrink:0}}>
+                          {editingW===ex.id?(
+                            <input autoFocus type="number" inputMode="decimal" value={editVal} onChange={e=>setEditVal(e.target.value)} onBlur={()=>commitWeightEdit(ex.id)} onKeyDown={e=>{if(e.key==='Enter')commitWeightEdit(ex.id);}} style={{width:"56px",background:DS.surfaceEl,border:`1px solid ${day.accent}`,borderRadius:DS.r6,color:DS.label,fontFamily:DS.fontMono,fontSize:"15px",textAlign:"center",padding:"2px 5px",fontWeight:300}}/>
+                          ):(
+                            <span style={{fontFamily:DS.fontMono,fontSize:"16px",fontWeight:300,color:isAdj?day.accent:DS.label,letterSpacing:"-0.3px"}}>{wLabel}<span style={{fontSize:"10px",color:DS.labelTert,marginLeft:"2px"}}>{wSuffix}</span></span>
+                          )}
+                        </div>
+                        <Btn onPress={()=>adjustW(ex.id,wi,1)} style={{color:DS.labelTert,fontSize:"14px",background:"none",padding:"0 2px",lineHeight:1}}>+</Btn>
+                      </div>
+                      <span style={{color:DS.sep,fontSize:"11px",flexShrink:0}}>·</span>
+                      {/* Sets hero, reps secondary */}
+                      <span style={{fontFamily:DS.fontMono,fontSize:"15px",fontWeight:500,color:DS.label,flexShrink:0}}>{s}</span>
+                      <span style={{fontSize:"11px",color:DS.labelTert,flexShrink:0}}>×</span>
+                      <span style={{fontFamily:DS.fontMono,fontSize:"13px",color:DS.labelSec,flexShrink:0}}>{r}</span>
+                      <span style={{color:DS.sep,fontSize:"11px",flexShrink:0}}>·</span>
+                      {/* Animated progress dots */}
+                      <div style={{display:"flex",gap:"3px",alignItems:"center",flex:1,minWidth:0}}>
+                        {Array(s).fill(null).map((_,si)=>(
+                          <div key={si}
+                            className={si===cc-1&&lastCompletedKey===doneKey?"dotPop":""}
+                            style={{width:"7px",height:"7px",borderRadius:"50%",background:si<cc?day.accent:DS.surfaceEl2,flexShrink:0,transition:"background 0.15s"}}/>
+                        ))}
+                      </div>
+                      {/* The log action — smallest possible footprint, unambiguous */}
+                      <div style={{flexShrink:0}}>
+                        {allSetsDone?(
+                          <span style={{color:DS.green}}>{Ico.check(14)}</span>
+                        ):(
+                          <Btn onPress={()=>completeNextSet(ex.id,s,group.rest,group.label,false)} style={{background:day.accent,borderRadius:DS.r6,width:"30px",height:"30px",display:"flex",alignItems:"center",justifyContent:"center",color:day.accent===DS.blue?"#fff":"#000",fontSize:"18px",fontWeight:600,flexShrink:0}}>+</Btn>
+                        )}
+                      </div>
+                    </div>
                     {/* Cue panel */}
                     {isOpen&&cues&&(
-                      <div className="reveal" style={{marginBottom:"10px",padding:"10px 12px",background:DS.surfaceEl,borderRadius:DS.r8,borderLeft:`2px solid ${day.accent}`}}>
+                      <div className="reveal" style={{marginTop:"8px",padding:"10px 12px",background:DS.surfaceEl,borderRadius:DS.r8,borderLeft:`2px solid ${day.accent}`}}>
                         <div style={{fontSize:"11px",fontWeight:700,color:day.accent,letterSpacing:"0.5px",marginBottom:"4px",textTransform:"uppercase"}}>Setup</div>
                         <div style={{fontSize:"12px",color:DS.labelSec,lineHeight:1.5,marginBottom:"8px"}}>{cues.setup}</div>
                         <div style={{fontSize:"11px",fontWeight:700,color:day.accent,letterSpacing:"0.5px",marginBottom:"4px",textTransform:"uppercase"}}>Cues</div>
-                        <div style={{fontSize:"12px",color:DS.labelSec,lineHeight:1.5,marginBottom:"10px"}}>{cues.cues}</div>
+                        <div style={{fontSize:"12px",color:DS.labelSec,lineHeight:1.5,marginBottom:"8px"}}>{cues.cues}</div>
                         <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name+' exercise form tutorial')}`} target="_blank" rel="noreferrer" style={{display:"inline-flex",alignItems:"center",gap:"4px",color:day.accent,fontSize:"12px",textDecoration:"none",fontWeight:500}}>
                           {Ico.play(10)}<span>Watch demo</span>
                         </a>
                       </div>
                     )}
-
-                    {/* Key info row: weight adjustment + sets × reps */}
-                    <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
-                      {/* Compact weight with inline -/+ */}
-                      <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                        <Btn onPress={()=>adjustW(ex.id,wi,-1)} style={{color:DS.labelTert,fontSize:"16px",background:"none",padding:"0 2px",lineHeight:1}}>−</Btn>
-                        <div onClick={()=>{setEditingW(ex.id);setEditVal(String(w));}} style={{cursor:"pointer"}}>
-                          {editingW===ex.id?(
-                            <input autoFocus type="number" inputMode="decimal" value={editVal} onChange={e=>setEditVal(e.target.value)} onBlur={()=>commitWeightEdit(ex.id)} onKeyDown={e=>{if(e.key==='Enter')commitWeightEdit(ex.id);}} style={{width:"72px",background:DS.surfaceEl,border:`1px solid ${day.accent}`,borderRadius:DS.r6,color:DS.label,fontFamily:DS.fontMono,fontSize:"17px",textAlign:"center",padding:"3px 6px",fontWeight:300}}/>
-                          ):(
-                            <span style={{fontFamily:DS.fontMono,fontSize:"19px",fontWeight:300,color:isAdj?day.accent:DS.label,letterSpacing:"-0.5px"}}>{wLabel}<span style={{fontSize:"12px",color:DS.labelTert,marginLeft:"2px"}}>{wSuffix}</span></span>
-                          )}
-                        </div>
-                        <Btn onPress={()=>adjustW(ex.id,wi,1)} style={{color:DS.labelTert,fontSize:"16px",background:"none",padding:"0 2px",lineHeight:1}}>+</Btn>
-                      </div>
-                      {/* Divider */}
-                      <span style={{color:DS.sep,fontSize:"14px"}}>·</span>
-                      {/* Sets × reps — sets number is the most important, slightly larger */}
-                      <div style={{display:"flex",alignItems:"baseline",gap:"3px"}}>
-                        <span style={{fontFamily:DS.fontMono,fontSize:"17px",fontWeight:400,color:DS.label}}>{s}</span>
-                        <span style={{fontSize:"12px",color:DS.labelTert}}>sets</span>
-                        <span style={{fontSize:"13px",color:DS.labelTert,margin:"0 2px"}}>×</span>
-                        <span style={{fontFamily:DS.fontMono,fontSize:"15px",fontWeight:400,color:DS.labelSec}}>{r}</span>
-                        <span style={{fontSize:"12px",color:DS.labelTert}}>reps</span>
-                      </div>
-                      {bo&&<span style={{fontSize:"11px",color:DS.labelTert}}>+back-off</span>}
-                    </div>
-
-                    {/* Progress + log action */}
-                    <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                      {/* Dot indicators — tappable to complete */}
-                      <div style={{display:"flex",gap:"4px",alignItems:"center",flex:1}}>
-                        {Array(s).fill(null).map((_,si)=>(
-                          <div key={si} style={{width:"8px",height:"8px",borderRadius:"50%",background:si<cc?day.accent:DS.surfaceEl2,flexShrink:0,transition:"background 0.2s"}}/>
-                        ))}
-                        <span style={{fontSize:"11px",color:DS.labelTert,marginLeft:"4px",fontFamily:DS.fontMono}}>{cc}/{s}</span>
-                      </div>
-                      {/* Compact actions */}
-                      {allSetsDone?(
-                        <div style={{display:"flex",alignItems:"center",gap:"4px",color:DS.green,fontSize:"12px",fontWeight:500}}>
-                          {Ico.check(12)}<span>Done</span>
-                        </div>
-                      ):(
-                        <Btn onPress={()=>completeNextSet(ex.id,s,group.rest,group.label,false)} style={{background:DS.surfaceEl,border:`0.5px solid ${DS.sep}`,borderRadius:DS.r8,padding:"5px 12px",color:DS.labelSec,fontSize:"13px",fontWeight:500,display:"flex",alignItems:"center",gap:"4px"}}>
-                          <span style={{fontSize:"12px",color:DS.labelTert}}>Set {cc+1}</span>
-                          <span style={{color:DS.labelSec,fontWeight:600}}>+</span>
-                        </Btn>
-                      )}
-                      {cc>0&&!allSetsDone&&<Btn onPress={()=>undoLastSet(ex.id,s,false)} style={{color:DS.labelTert,fontSize:"12px",background:"none",padding:"4px"}}>undo</Btn>}
-                    </div>
-
-                    {/* Rating — only after all sets done */}
+                    {/* Rating inline after all sets done */}
                     {allSetsDone&&(
-                      <div className="reveal" style={{marginTop:"10px",padding:"8px 10px",background:DS.surfaceEl,borderRadius:DS.r8}}>
-                        <div style={{fontSize:"11px",color:DS.labelTert,marginBottom:"6px",fontWeight:500,textTransform:"uppercase",letterSpacing:"0.4px"}}>How did that feel?</div>
-                        <div style={{display:"flex",gap:"5px"}}>
-                          {RATING_OPTS.map(({v,label,color})=>(
-                            <Btn key={v} onPress={()=>setRating(ex.id,v)} style={{flex:1,padding:"6px 4px",background:currentRating===v?`${color}18`:DS.surface,borderRadius:DS.r6,color:currentRating===v?color:DS.labelTert,fontSize:"11px",fontWeight:currentRating===v?600:400,border:currentRating===v?`0.5px solid ${color}`:"none"}}>
-                              {label}
-                            </Btn>
-                          ))}
-                        </div>
+                      <div className="reveal" style={{display:"flex",gap:"5px",marginTop:"8px"}}>
+                        {RATING_OPTS.map(({v,label,color})=>(
+                          <Btn key={v} onPress={()=>setRating(ex.id,v)} style={{flex:1,padding:"5px 4px",background:currentRating===v?`${color}18`:DS.surfaceEl,borderRadius:DS.r6,color:currentRating===v?color:DS.labelTert,fontSize:"11px",fontWeight:currentRating===v?600:400,border:currentRating===v?`0.5px solid ${color}`:"none"}}>
+                            {label}
+                          </Btn>
+                        ))}
                       </div>
                     )}
-
-                    {/* Back-off — compact */}
+                    {/* Back-off inline */}
                     {bo&&allSetsDone&&(
-                      <div style={{marginTop:"8px",display:"flex",alignItems:"center",gap:"8px"}}>
-                        <div style={{display:"flex",gap:"3px",flex:1,alignItems:"center"}}>
-                          {Array(bo.sets).fill(null).map((_,si)=>(
-                            <div key={si} style={{width:"6px",height:"6px",borderRadius:"50%",background:si<boCount?DS.labelSec:DS.surfaceEl2}}/>
-                          ))}
-                          <span style={{fontSize:"10px",color:DS.labelTert,marginLeft:"4px"}}>{boCount}/{bo.sets} back-off · {bo.reps} @ {bo.w}lbs</span>
+                      <div style={{marginTop:"6px",display:"flex",alignItems:"center",gap:"6px"}}>
+                        <div style={{display:"flex",gap:"3px"}}>
+                          {Array(bo.sets).fill(null).map((_,si)=>(<div key={si} style={{width:"5px",height:"5px",borderRadius:"50%",background:si<boCount?DS.labelSec:DS.surfaceEl2}}/>))}
                         </div>
+                        <span style={{fontSize:"10px",color:DS.labelTert}}>{boCount}/{bo.sets} back-off · {bo.reps} @ {bo.w}lbs</span>
                         {boCount<bo.sets?(
-                          <Btn onPress={()=>completeNextSet(ex.id,bo.sets,group.rest,`${group.label} back-off`,true)} style={{background:DS.surfaceEl,borderRadius:DS.r6,padding:"4px 10px",color:DS.labelSec,fontSize:"12px",fontWeight:500}}>+</Btn>
-                        ):(
-                          <span style={{fontSize:"11px",color:`${DS.green}80`}}>Done</span>
-                        )}
-                        {boCount>0&&<Btn onPress={()=>undoLastSet(ex.id,bo.sets,true)} style={{color:DS.labelTert,fontSize:"11px",background:"none"}}>undo</Btn>}
+                          <Btn onPress={()=>completeNextSet(ex.id,bo.sets,group.rest,`${group.label} back-off`,true)} style={{background:day.accent,borderRadius:DS.r6,width:"22px",height:"22px",display:"flex",alignItems:"center",justifyContent:"center",color:day.accent===DS.blue?"#fff":"#000",fontSize:"14px",fontWeight:600}}>+</Btn>
+                        ):<span style={{fontSize:"11px",color:`${DS.green}80`}}>{Ico.check(10)}</span>}
                       </div>
                     )}
                   </div>
@@ -1669,7 +1751,7 @@ export default function App(){
         )}
       </div>
 
-      <RestTimer timer={timer} accent={day.accent} onSkip={skipTimer}/>
+      </div>
     </div>
   );
 }
