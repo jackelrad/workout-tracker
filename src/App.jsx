@@ -24,11 +24,12 @@ const DS = {
   fillTert:    "rgba(118,118,128,0.24)",
   // Separators — hairline
   sep:         "rgba(84,84,88,0.65)",
-  // System accent colors
-  blue:        "#0A84FF",
-  green:       "#30D158",
-  orange:      "#FF9F0A",
-  red:         "#FF453A",
+  // System accent colors — each used for ONE semantic purpose only
+  blue:        "#0A84FF",  // Back/shoulder day
+  green:       "#30D158",  // Positive deltas + completion confirmation
+  orange:      "#FF9F0A",  // Chest/tri day + Strength phase
+  red:         "#FF453A",  // Peaking phase + negative deltas
+  indigo:      "#5E5CE6",  // Legs day — distinct from all phase colors
   yellow:      "#FFD60A",
   // Typography — system font renders SF Pro on Apple devices natively
   font:        "-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif",
@@ -41,7 +42,40 @@ const DS = {
   r6:          "6px",
 };
 
-// ── SF SYMBOL–STYLE SVG ICONS ──────────────────────────────────────────
+// ── EXERCISE SETTINGS DEFAULTS ────────────────────────────────────────
+// Per-exercise: increment = smallest weight change available on the machine/bar
+// Defaults reflect common gym equipment. Users can override in Settings.
+const DEFAULT_EX_SETTINGS = {
+  bench:        {increment:5,   minW:45,  maxW:null},
+  pushdown:     {increment:2.5, minW:5,   maxW:null},
+  incline:      {increment:2.5, minW:5,   maxW:null},
+  skull:        {increment:10,  minW:20,  maxW:null}, // EZ bar gym typically 10lb jumps
+  fly:          {increment:2.5, minW:2.5, maxW:null},
+  kickback:     {increment:2.5, minW:2.5, maxW:null},
+  pullup:       {increment:2.5, minW:0,   maxW:null},
+  row:          {increment:5,   minW:20,  maxW:null},
+  facepull:     {increment:2.5, minW:5,   maxW:null},
+  db_shoulder:  {increment:2.5, minW:5,   maxW:null},
+  incline_curl: {increment:2.5, minW:5,   maxW:null},
+  lat_raise:    {increment:2.5, minW:2.5, maxW:null},
+  lat_pulldown: {increment:5,   minW:20,  maxW:null},
+  trap_bar:     {increment:5,   minW:45,  maxW:null},
+  leg_press:    {increment:10,  minW:50,  maxW:null},
+  rdl:          {increment:5,   minW:20,  maxW:null},
+  calf:         {increment:5,   minW:0,   maxW:null},
+  leg_ext:      {increment:5,   minW:10,  maxW:null},
+  leg_curl:     {increment:5,   minW:10,  maxW:null},
+};
+const getExSetting=(exId,key,exSettings)=>exSettings?.[exId]?.[key]??DEFAULT_EX_SETTINGS[exId]?.[key]??2.5;
+const snapToIncrement=(val,exId,exSettings)=>{
+  const inc=getExSetting(exId,"increment",exSettings);
+  const minW=getExSetting(exId,"minW",exSettings);
+  const maxW=exSettings?.[exId]?.maxW??DEFAULT_EX_SETTINGS[exId]?.maxW;
+  let snapped=Math.round(val/inc)*inc;
+  if(minW!==null) snapped=Math.max(minW,snapped);
+  if(maxW!==null) snapped=Math.min(maxW,snapped);
+  return snapped;
+};
 // Single stroke, round caps, mimic SF Symbols geometry
 const Ico = {
   settings: (sz=20) => (
@@ -90,11 +124,24 @@ const Ico = {
       <polygon points="5 3 19 12 5 21 5 3"/>
     </svg>
   ),
+  logout: (sz=17) => (
+    <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+      <polyline points="16 17 21 12 16 7"/>
+      <line x1="21" y1="12" x2="9" y2="12"/>
+    </svg>
+  ),
 };
 
 // ── CONSTANTS ──────────────────────────────────────────────────────────
 const PHASES = ["Hypertrophy","Hypertrophy","Hypertrophy","Hypertrophy","Strength","Strength","Strength","Strength","Peaking","Peaking","Peaking","Deload"];
-const PHASE_COLORS = { Hypertrophy:DS.green, Strength:DS.orange, Peaking:DS.red, Deload:"#636366" };
+const PHASE_COLORS = { Hypertrophy:DS.blue, Strength:DS.orange, Peaking:DS.red, Deload:"#636366" };
+// Phase segments for header timeline
+const PHASE_SEGS=[
+  {name:"Hyp",label:"Hypertrophy",weeks:[1,2,3,4],color:DS.blue},
+  {name:"Str",label:"Strength",weeks:[5,6,7,8],color:DS.orange},
+  {name:"Pea",label:"Peaking",weeks:[9,10,11,12],color:DS.red},
+];
 const DAYS_SHORT = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const PR_EXERCISES = ["bench","row","trap_bar","leg_press","incline","rdl","pullup"];
 const r25 = v => Math.round(v / 2.5) * 2.5;
@@ -184,7 +231,7 @@ const PLAN={
       ]}
     ]
   },
-  legs:{label:"Legs",day:"THU",accent:DS.green,
+  legs:{label:"Legs",day:"THU",accent:DS.indigo,
     notes:["Trap bar: neutral back, drive through heels. Calibration week.","RDL: 3s eccentric. Feel the hamstring stretch.","Leg press depth: parallel or below every rep.","Volume peak. Slight back-off on hinges.","Strength block. Weight jumps. Brace hard.","Control on both hinge movements. No bouncing RDL.","Leg press going heavy. Full range every rep.","Final heavy week. Back stays neutral on trap bar.","Low volume, high intensity. Top sets matter.","Top sets + back-off. Legs should feel it.","Near-max trap bar. Strong brace, strong pull.","Deload. Full ROM, no strain, flush the legs."],
     groups:[
       {label:"Straight Sets",rest:"Rest 2 min",supersetted:false,exercises:[
@@ -405,7 +452,7 @@ function OnboardingScreen({session,onComplete}){
       </div>
       <div style={{padding:"8px 20px"}}>
         {step===0&&(<>
-          {[{label:"Chest & Triceps",a:DS.orange,val:d1,set:setD1},{label:"Back & Shoulders",a:DS.blue,val:d2,set:setD2},{label:"Legs",a:DS.green,val:d3,set:setD3}].map(({label:lbl,a,val,set})=>(
+          {[{label:"Chest & Triceps",a:DS.orange,val:d1,set:setD1},{label:"Back & Shoulders",a:DS.blue,val:d2,set:setD2},{label:"Legs",a:DS.indigo,val:d3,set:setD3}].map(({label:lbl,a,val,set})=>(
             <div key={lbl} style={{marginBottom:"20px"}}>
               <div style={{fontSize:"13px",fontWeight:600,color:a,marginBottom:"8px",letterSpacing:"0.2px"}}>{lbl.toUpperCase()}</div>
               <div style={{display:"flex",gap:"4px",background:DS.surfaceEl,borderRadius:DS.r10,padding:"2px"}}>{DAYS_SHORT.map((_,i)=>dayBtn(val,set,i))}</div>
@@ -455,12 +502,15 @@ function SettingsScreen({session,userProgress,onBack,onSave}){
   const[equipment,setEquipment]=useState(()=>{const e=defaultEquipment();if(userProgress?.equipment)Object.assign(e,userProgress.equipment);return e;});
   const[benchmarks,setBenchmarks]=useState(()=>{const b=defaultBenchmarks();if(userProgress?.benchmarks)Object.assign(b,userProgress.benchmarks);return b;});
   const[manualLock,setManualLock]=useState(userProgress?.manual_week_lock||false);
+  const[localExSettings,setLocalExSettings]=useState(()=>userProgress?.exercise_settings||{});
+  const[expandedEx,setExpandedEx]=useState(null);
   const[stab,setStab]=useState("schedule");
   const[saving,setSaving]=useState(false);
+  const setExSetting=(exId,key,val)=>setLocalExSettings(p=>({...p,[exId]:{...p[exId],[key]:val}}));
   const handleSave=async()=>{
     setSaving(true);
     const weights=buildWeights(benchmarks,equipment);
-    await supabase.from("user_progress").upsert({user_id:session.user.id,benchmarks,equipment,start_date:startDate,day1_dow:d1,day2_dow:d2,day3_dow:d3,manual_week_lock:manualLock,updated_at:new Date().toISOString()});
+    await supabase.from("user_progress").upsert({user_id:session.user.id,benchmarks,equipment,start_date:startDate,day1_dow:d1,day2_dow:d2,day3_dow:d3,manual_week_lock:manualLock,exercise_settings:localExSettings,updated_at:new Date().toISOString()});
     await saveGeneratedWeights(session.user.id,weights);
     setSaving(false);onSave();
   };
@@ -495,7 +545,7 @@ function SettingsScreen({session,userProgress,onBack,onSave}){
       </div>
       <div style={{padding:"20px"}}>
         {stab==="schedule"&&(<>
-          {[{label:"Chest & Triceps",a:DS.orange,val:d1,set:setD1},{label:"Back & Shoulders",a:DS.blue,val:d2,set:setD2},{label:"Legs",a:DS.green,val:d3,set:setD3}].map(({label:lbl,a,val,set})=>(
+          {[{label:"Chest & Triceps",a:DS.orange,val:d1,set:setD1},{label:"Back & Shoulders",a:DS.blue,val:d2,set:setD2},{label:"Legs",a:DS.indigo,val:d3,set:setD3}].map(({label:lbl,a,val,set})=>(
             <div key={lbl} style={{marginBottom:"20px"}}>
               <div style={{fontSize:"13px",fontWeight:600,color:a,marginBottom:"8px"}}>{lbl.toUpperCase()}</div>
               <div style={{display:"flex",gap:"4px",background:DS.surfaceEl,borderRadius:DS.r10,padding:"2px"}}>{DAYS_SHORT.map((_,i)=>dayBtn(val,set,i))}</div>
@@ -526,8 +576,50 @@ function SettingsScreen({session,userProgress,onBack,onSave}){
           </div>
         )}
         {["chest","back","legs"].map((t,ti)=>stab===t&&(
-          <div key={t} style={{background:DS.surface,borderRadius:DS.r16,padding:"0 16px",overflow:"hidden"}}>
-            {Object.values(BENCH_FIELDS)[ti].map(f=>(<BenchInput key={f.id} label={f.label} hint={f.hint} value={benchmarks[f.id]} onChange={v=>setBenchmarks(p=>({...p,[f.id]:v}))} step={f.step} min={f.min} unit={f.unit} accent={DS.blue}/>))}
+          <div key={t}>
+            <div style={{background:DS.surface,borderRadius:DS.r16,padding:"0 16px",overflow:"hidden",marginBottom:"16px"}}>
+              {Object.values(BENCH_FIELDS)[ti].map(f=>(<BenchInput key={f.id} label={f.label} hint={f.hint} value={benchmarks[f.id]} onChange={v=>setBenchmarks(p=>({...p,[f.id]:v}))} step={f.step} min={f.min} unit={f.unit} accent={DS.blue}/>))}
+            </div>
+            <div style={{fontSize:"13px",fontWeight:600,color:DS.labelSec,marginBottom:"8px",textTransform:"uppercase",letterSpacing:"0.4px"}}>Equipment Constraints</div>
+            <div style={{fontSize:"13px",color:DS.labelTert,marginBottom:"12px",lineHeight:1.5}}>Optional. Set the increment, minimum, and maximum for each exercise based on your gym's equipment. Defaults are pre-filled.</div>
+            <div style={{background:DS.surface,borderRadius:DS.r16,overflow:"hidden"}}>
+              {Object.values(BENCH_FIELDS)[ti].filter(f=>f.unit==="lbs").map((f,fi,arr)=>{
+                const inc=localExSettings?.[f.id]?.increment??DEFAULT_EX_SETTINGS[f.id]?.increment??2.5;
+                const minW=localExSettings?.[f.id]?.minW??DEFAULT_EX_SETTINGS[f.id]?.minW??0;
+                const maxW=localExSettings?.[f.id]?.maxW??DEFAULT_EX_SETTINGS[f.id]?.maxW??null;
+                const isExpanded=expandedEx===f.id;
+                const isLast=fi===arr.length-1;
+                return(
+                  <div key={f.id} style={{borderBottom:isLast||isExpanded?"none":`0.5px solid ${DS.sep}`}}>
+                    <Btn onPress={()=>setExpandedEx(isExpanded?null:f.id)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"13px 16px",background:"transparent",textAlign:"left"}}>
+                      <span style={{fontSize:"15px",color:DS.label}}>{f.label}</span>
+                      <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                        <span style={{fontSize:"12px",color:DS.labelTert}}>±{inc}lbs</span>
+                        <span style={{fontSize:"11px",color:DS.labelTert,transform:isExpanded?"rotate(180deg)":"none",transition:"transform 0.2s"}}>▼</span>
+                      </div>
+                    </Btn>
+                    {isExpanded&&(
+                      <div className="reveal" style={{padding:"0 16px 14px",borderTop:`0.5px solid ${DS.sep}`}}>
+                        {[
+                          {label:"Increment (lbs)",key:"increment",val:inc,step:0.5,min:0.5},
+                          {label:"Minimum weight (lbs)",key:"minW",val:minW,step:1,min:0},
+                          {label:"Maximum weight (lbs)",key:"maxW",val:maxW||0,step:5,min:0,optional:true},
+                        ].map(({label:lbl,key,val,step,min:mn,optional})=>(
+                          <div key={key} style={{paddingTop:"12px"}}>
+                            <div style={{fontSize:"13px",color:DS.labelSec,marginBottom:"8px"}}>{lbl}{optional&&<span style={{color:DS.labelTert}}> (optional)</span>}</div>
+                            <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                              <Btn onPress={()=>setExSetting(f.id,key,Math.max(mn,Math.round((val-step)*10)/10))} style={{width:"32px",height:"32px",background:DS.fillTert,borderRadius:"50%",color:DS.labelSec,fontSize:"18px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>−</Btn>
+                              <div style={{flex:1,textAlign:"center",fontFamily:DS.fontMono,fontSize:"20px",fontWeight:300,color:DS.label}}>{val||"—"}</div>
+                              <Btn onPress={()=>setExSetting(f.id,key,Math.round((val+step)*10)/10)} style={{width:"32px",height:"32px",background:DS.fillTert,borderRadius:"50%",color:DS.labelSec,fontSize:"18px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>+</Btn>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         ))}
       </div>
@@ -632,8 +724,9 @@ function GapResumePrompt({calculatedWeek,lastCompletedWeek,onResume,onAdjust}){
 }
 
 // ── PROGRESS SCREEN ────────────────────────────────────────────────────
-function ProgressScreen({session,adj,onBack}){
+function ProgressScreen({session,adj,userProgress,completedSessions,currentWeek,onBack}){
   const[selectedEx,setSelectedEx]=useState("bench");
+  const[selectedBar,setSelectedBar]=useState(null);
   const allExercises=[
     {id:"bench",name:"Bench Press",day:"chest_tri"},{id:"incline",name:"Incline DB Press",day:"chest_tri"},
     {id:"pushdown",name:"Tricep Pushdown",day:"chest_tri"},{id:"row",name:"Barbell Row",day:"back_shoulder_bi"},
@@ -642,14 +735,37 @@ function ProgressScreen({session,adj,onBack}){
     {id:"leg_press",name:"Leg Press",day:"legs"},{id:"rdl",name:"Romanian Deadlift",day:"legs"},
     {id:"leg_ext",name:"Leg Extension",day:"legs"},{id:"leg_curl",name:"Leg Curl",day:"legs"},
   ];
+
+  // Calculate actual week dates from start date
+  const getWeekDate=(wk)=>{
+    if(!userProgress?.start_date) return `Wk ${wk}`;
+    const d=new Date(userProgress.start_date);
+    d.setHours(0,0,0,0);
+    d.setDate(d.getDate()+(wk-1)*7);
+    return d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+  };
+
+  const isWeekCompleted=(wk)=>{
+    const dayKey=allExercises.find(e=>e.id===selectedEx)?.day;
+    if(!dayKey) return false;
+    return completedSessions?.includes(`${dayKey}_w${wk}`);
+  };
+
   const ex=allExercises.find(e=>e.id===selectedEx);
   const day=PLAN[ex?.day];
   const planEx=day?.groups.flatMap(g=>g.exercises).find(e=>e.id===selectedEx);
   const dataPoints=Array(12).fill(null).map((_,i)=>{const k=`${ex.day}_w${i+1}_${selectedEx}`;return adj[k]??planEx?.weights[i]??0;});
-  const w1=dataPoints[0];const maxW=Math.max(...dataPoints);const minW=Math.min(...dataPoints.filter(v=>v>0));
-  const chartH=100;const range=maxW-minW||1;const accent=day?.accent||DS.blue;
-  const totalGain=Math.max(0,dataPoints[11]-w1);
+  const w1=dataPoints[0];
+  const relevantMax=Math.max(...dataPoints);const relevantMin=Math.min(...dataPoints.filter(v=>v>0));
+  const chartH=110;const range=relevantMax-relevantMin||1;const accent=day?.accent||DS.blue;
+  const totalGain=Math.max(0,(dataPoints[currentWeek-1]||0)-w1);
   const dayGroups={chest_tri:allExercises.filter(e=>e.day==="chest_tri"),back_shoulder_bi:allExercises.filter(e=>e.day==="back_shoulder_bi"),legs:allExercises.filter(e=>e.day==="legs")};
+
+  const sel=selectedBar!==null?selectedBar:(currentWeek-1);
+  const selVal=dataPoints[sel];
+  const selDate=getWeekDate(sel+1);
+  const selCompleted=isWeekCompleted(sel+1);
+
   return(
     <div style={{background:DS.bg,minHeight:"100vh",color:DS.label,maxWidth:"480px",margin:"0 auto",paddingBottom:"40px",fontFamily:DS.font}}>
       <style>{`html,body{background:#000;margin:0;padding:0;} *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;} button:active{opacity:0.65;transform:scale(0.96);} button{transition:opacity 0.12s,transform 0.1s;}`}</style>
@@ -659,79 +775,116 @@ function ProgressScreen({session,adj,onBack}){
           <span style={{fontSize:"17px",fontWeight:600}}>Progress</span>
         </div>
       </div>
-      <div style={{padding:"20px"}}>
+      <div style={{padding:"16px 20px"}}>
+        {/* Exercise selector by day */}
         {Object.entries(dayGroups).map(([dayKey,exs])=>(
-          <div key={dayKey} style={{marginBottom:"18px"}}>
-            <div style={{fontSize:"12px",fontWeight:600,color:PLAN[dayKey].accent,letterSpacing:"0.5px",textTransform:"uppercase",marginBottom:"8px"}}>{PLAN[dayKey].label}</div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:"6px"}}>
+          <div key={dayKey} style={{marginBottom:"16px"}}>
+            <div style={{fontSize:"11px",fontWeight:600,color:PLAN[dayKey].accent,letterSpacing:"0.8px",textTransform:"uppercase",marginBottom:"7px"}}>{PLAN[dayKey].label}</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:"5px"}}>
               {exs.map(e=>(
-                <Btn key={e.id} onPress={()=>setSelectedEx(e.id)} style={{padding:"7px 13px",background:selectedEx===e.id?PLAN[e.day].accent:DS.surface,borderRadius:"20px",color:selectedEx===e.id?"#000":DS.labelSec,fontSize:"14px",fontWeight:selectedEx===e.id?600:400,transition:"all 0.15s"}}>
+                <Btn key={e.id} onPress={()=>{setSelectedEx(e.id);setSelectedBar(null);}} style={{padding:"6px 12px",background:selectedEx===e.id?PLAN[e.day].accent:DS.surface,borderRadius:"20px",color:selectedEx===e.id?"#000":DS.labelSec,fontSize:"13px",fontWeight:selectedEx===e.id?600:400,transition:"all 0.15s"}}>
                   {e.name}
                 </Btn>
               ))}
             </div>
           </div>
         ))}
+
+        {/* Chart card */}
         <div style={{background:DS.surface,borderRadius:DS.r16,padding:"20px",marginBottom:"12px"}}>
-          <div style={{fontSize:"20px",fontWeight:700,color:DS.label,marginBottom:"2px"}}>{ex?.name}</div>
-          <div style={{fontSize:"13px",color:DS.labelTert,marginBottom:"20px"}}>{day?.label}</div>
-          <div style={{display:"flex",gap:"16px",marginBottom:"20px",alignItems:"center"}}>
+          <div style={{fontSize:"19px",fontWeight:700,color:DS.label,marginBottom:"2px",letterSpacing:"-0.3px"}}>{ex?.name}</div>
+          <div style={{fontSize:"13px",color:DS.labelTert,marginBottom:"18px"}}>{day?.label}</div>
+
+          {/* Selected bar callout */}
+          <div style={{background:DS.surfaceEl,borderRadius:DS.r10,padding:"12px 14px",marginBottom:"16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <div>
-              <div style={{fontFamily:DS.fontMono,fontSize:"24px",fontWeight:300,color:DS.label,letterSpacing:"-1px"}}>{w1}<span style={{fontSize:"13px",color:DS.labelTert,marginLeft:"4px"}}>lbs</span></div>
-              <div style={{fontSize:"12px",color:DS.labelTert,marginTop:"1px"}}>Week 1</div>
+              <div style={{fontSize:"12px",color:DS.labelTert,marginBottom:"2px"}}>{selCompleted?"Completed":"Planned"} · {selDate}</div>
+              <div style={{fontSize:"13px",color:DS.labelSec}}>Week {sel+1} · {PHASES[sel]}</div>
             </div>
-            <div style={{color:DS.labelTert,fontSize:"16px",marginTop:"-4px"}}>→</div>
-            <div>
-              <div style={{fontFamily:DS.fontMono,fontSize:"24px",fontWeight:300,color:DS.label,letterSpacing:"-1px"}}>{dataPoints[11]}<span style={{fontSize:"13px",color:DS.labelTert,marginLeft:"4px"}}>lbs</span></div>
-              <div style={{fontSize:"12px",color:DS.labelTert,marginTop:"1px"}}>Week 12</div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontFamily:DS.fontMono,fontSize:"32px",fontWeight:300,color:selCompleted?accent:DS.labelSec,letterSpacing:"-1px",lineHeight:1}}>{selVal}</div>
+              <div style={{fontSize:"12px",color:DS.labelTert}}>lbs</div>
             </div>
-            <div style={{flex:1}}/>
-            {totalGain>0&&<div style={{background:`${DS.green}14`,borderRadius:DS.r8,padding:"8px 12px",textAlign:"center"}}>
-              <div style={{fontFamily:DS.fontMono,fontSize:"22px",fontWeight:300,color:DS.green,letterSpacing:"-1px"}}>+{totalGain}</div>
-              <div style={{fontSize:"11px",color:DS.green,opacity:.7}}>lbs gained</div>
+          </div>
+
+          {/* Summary stats */}
+          <div style={{display:"flex",gap:"12px",marginBottom:"18px"}}>
+            <div style={{flex:1,background:DS.surfaceEl,borderRadius:DS.r10,padding:"10px 12px"}}>
+              <div style={{fontFamily:DS.fontMono,fontSize:"20px",fontWeight:300,color:DS.label,letterSpacing:"-0.5px"}}>{w1}<span style={{fontSize:"11px",color:DS.labelTert,marginLeft:"3px"}}>lbs</span></div>
+              <div style={{fontSize:"11px",color:DS.labelTert,marginTop:"1px"}}>Week 1 baseline</div>
+            </div>
+            {totalGain>0&&<div style={{flex:1,background:`${DS.green}10`,borderRadius:DS.r10,padding:"10px 12px"}}>
+              <div style={{fontFamily:DS.fontMono,fontSize:"20px",fontWeight:300,color:DS.green,letterSpacing:"-0.5px"}}>+{totalGain}<span style={{fontSize:"11px",color:DS.green,opacity:.7,marginLeft:"3px"}}>lbs</span></div>
+              <div style={{fontSize:"11px",color:DS.green,opacity:.7,marginTop:"1px"}}>through today</div>
             </div>}
           </div>
-          {/* Bar chart */}
-          <div style={{position:"relative",height:`${chartH}px`,display:"flex",alignItems:"flex-end",gap:"3px"}}>
+
+          {/* Bar chart — tappable, completed vs planned opacity */}
+          <div style={{position:"relative",height:`${chartH}px`,display:"flex",alignItems:"flex-end",gap:"2px",marginBottom:"8px"}}>
             {dataPoints.map((v,i)=>{
-              const h=range===0?chartH:Math.max(3,Math.round(((v-minW)/range)*chartH));
-              const isAdj=adj[`${ex?.day}_w${i+1}_${selectedEx}`]!==undefined;
+              const h=range===0?chartH:Math.max(4,Math.round(((v-relevantMin)/range)*chartH));
+              const completed=isWeekCompleted(i+1);
+              const isSelected=sel===i;
+              const isPast=i+1<currentWeek;
+              const isFuture=i+1>currentWeek;
+              const opacity=completed?1:isPast?0.7:i+1===currentWeek?0.9:0.3;
               return(
-                <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"4px"}}>
-                  <div style={{width:"100%",background:isAdj?accent:`${accent}35`,borderRadius:"3px 3px 0 0",height:`${h}px`,transition:"height 0.4s ease"}}/>
-                  <div style={{fontSize:"8px",color:DS.labelTert,fontFamily:DS.fontMono}}>{i+1}</div>
-                </div>
+                <Btn key={i} onPress={()=>setSelectedBar(i)} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"0",padding:0,background:"transparent",borderRadius:0}}>
+                  <div style={{
+                    width:"100%",
+                    background:accent,
+                    opacity:opacity,
+                    borderRadius:"3px 3px 0 0",
+                    height:`${h}px`,
+                    transition:"height 0.4s ease,opacity 0.2s",
+                    border:isSelected?`1.5px solid ${DS.label}`:"1.5px solid transparent",
+                    boxSizing:"border-box"
+                  }}/>
+                </Btn>
               );
             })}
           </div>
-          <div style={{display:"flex",gap:"14px",marginTop:"12px"}}>
-            {[{bg:accent,label:"adjusted by you"},{bg:`${accent}35`,label:"planned"}].map(({bg,label})=>(
+          {/* X-axis dates */}
+          <div style={{display:"flex",gap:"2px"}}>
+            {dataPoints.map((_,i)=>(
+              <div key={i} style={{flex:1,textAlign:"center"}}>
+                <div style={{fontSize:"7px",color:sel===i?DS.label:DS.labelTert,fontFamily:DS.fontMono,fontWeight:sel===i?600:400,lineHeight:1,transform:"rotate(-35deg)",transformOrigin:"center top",marginTop:"2px",whiteSpace:"nowrap"}}>
+                  {getWeekDate(i+1)}
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Legend */}
+          <div style={{display:"flex",gap:"14px",marginTop:"20px"}}>
+            {[{opacity:1,label:"completed"},{opacity:0.3,label:"planned"}].map(({opacity,label})=>(
               <div key={label} style={{display:"flex",alignItems:"center",gap:"5px"}}>
-                <div style={{width:"8px",height:"8px",borderRadius:"2px",background:bg}}/>
+                <div style={{width:"10px",height:"10px",borderRadius:"2px",background:accent,opacity}}/>
                 <span style={{fontSize:"11px",color:DS.labelTert}}>{label}</span>
               </div>
             ))}
           </div>
         </div>
-        {/* Week by week */}
+
+        {/* Week by week list */}
         <div style={{background:DS.surface,borderRadius:DS.r16,overflow:"hidden"}}>
           <div style={{padding:"14px 16px",borderBottom:`0.5px solid ${DS.sep}`}}>
             <div style={{fontSize:"15px",fontWeight:600,color:DS.label}}>Week by Week</div>
           </div>
           {dataPoints.map((v,i)=>{
             const wk=i+1;const prev=i>0?dataPoints[i-1]:null;const diff=prev!==null?v-prev:null;
-            const isAdj=adj[`${ex?.day}_w${wk}_${selectedEx}`]!==undefined;
+            const completed=isWeekCompleted(wk);const isFuture=wk>currentWeek;
             return(
-              <div key={wk} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",borderBottom:i<11?`0.5px solid ${DS.sep}`:"none"}}>
+              <Btn key={wk} onPress={()=>setSelectedBar(i)} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 16px",borderBottom:i<11?`0.5px solid ${DS.sep}`:"none",background:sel===i?DS.surfaceEl:"transparent",textAlign:"left",transition:"background 0.15s"}}>
                 <div>
-                  <span style={{fontSize:"15px",color:DS.labelSec}}>Week {wk}</span>
+                  <span style={{fontSize:"15px",color:isFuture?DS.labelTert:DS.labelSec,fontWeight:sel===i?500:400}}>{getWeekDate(wk)}</span>
                   <span style={{fontSize:"12px",color:DS.labelTert,marginLeft:"8px"}}>{PHASES[i].slice(0,4)}</span>
+                  {completed&&<span style={{fontSize:"10px",color:DS.labelTert,marginLeft:"6px"}}>✓</span>}
                 </div>
-                <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
-                  {diff!==null&&diff!==0&&<span style={{fontSize:"13px",color:diff>0?DS.green:DS.red,fontFamily:DS.fontMono}}>{diff>0?"+":""}{diff}</span>}
-                  <span style={{fontFamily:DS.fontMono,fontSize:"17px",fontWeight:300,color:isAdj?accent:DS.label,letterSpacing:"-0.5px"}}>{v}<span style={{fontSize:"11px",color:DS.labelTert,marginLeft:"2px"}}>lbs</span></span>
+                <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                  {diff!==null&&diff!==0&&<span style={{fontSize:"13px",color:diff>0?DS.green:DS.red,fontFamily:DS.fontMono,opacity:isFuture?0.5:1}}>{diff>0?"+":""}{diff}</span>}
+                  <span style={{fontFamily:DS.fontMono,fontSize:"17px",fontWeight:300,color:isFuture?DS.labelTert:completed?accent:DS.label,letterSpacing:"-0.5px",opacity:isFuture?0.5:1}}>{v}<span style={{fontSize:"11px",color:DS.labelTert,marginLeft:"2px"}}>lbs</span></span>
                 </div>
-              </div>
+              </Btn>
             );
           })}
         </div>
@@ -772,6 +925,9 @@ export default function App(){
   const[showGapPrompt,setShowGapPrompt]=useState(false);
   const[gapCalcWeek,setGapCalcWeek]=useState(1);
   const[gapLastWeek,setGapLastWeek]=useState(0);
+  const[exSettings,setExSettings]=useState({});
+  const[focusMode,setFocusMode]=useState(false);
+  const[focusGi,setFocusGi]=useState(0);
   const timerRef=useRef(null);
 
   useEffect(()=>{
@@ -788,6 +944,7 @@ export default function App(){
     if(progress){
       setUserProgress(progress);
       if(progress.completed_sessions) setCompletedSessions(progress.completed_sessions);
+      if(progress.exercise_settings) setExSettings(progress.exercise_settings);
       const manualLock=progress.manual_week_lock||false;
       const lastCompleted=progress.last_completed_week||0;
       if(manualLock){setWeek(progress.current_week||1);setTab(progress.current_day||'chest_tri');}
@@ -825,8 +982,13 @@ export default function App(){
   const getW1=(exId)=>{const k=`${tab}_w1_${exId}`;if(adj[k]!==undefined)return adj[k];const ex=PLAN[tab].groups.flatMap(g=>g.exercises).find(e=>e.id===exId);return ex?ex.weights[0]:0;};
 
   const saveWeight=(day,wk,exId,val)=>{if(!session)return;supabase.from("weight_adjustments").upsert({user_id:session.user.id,day,week:wk,exercise_id:exId,weight:val,updated_at:new Date().toISOString()},{onConflict:"user_id,day,week,exercise_id"});};
-  const adjustW=(exId,wi,delta)=>{const next=Math.max(0,r25(getW(exId,wi)+delta));const k=`${tab}_w${week}_${exId}`;setAdj(p=>({...p,[k]:next}));if(PR_EXERCISES.includes(exId)&&next>(prs[exId]||0))setPRs(p=>({...p,[exId]:next}));saveWeight(tab,week,exId,next);};
-  const commitWeightEdit=(exId)=>{const v=parseFloat(editVal);if(!isNaN(v)&&v>=0){const next=r25(v);const k=`${tab}_w${week}_${exId}`;setAdj(p=>({...p,[k]:next}));if(PR_EXERCISES.includes(exId)&&next>(prs[exId]||0))setPRs(p=>({...p,[exId]:next}));saveWeight(tab,week,exId,next);}setEditingW(null);};
+  const adjustW=(exId,wi,dir)=>{
+    const curr=getW(exId,wi);
+    const inc=getExSetting(exId,"increment",exSettings);
+    const next=Math.max(0,snapToIncrement(curr+(dir*inc),exId,exSettings));
+    const k=`${tab}_w${week}_${exId}`;setAdj(p=>({...p,[k]:next}));if(PR_EXERCISES.includes(exId)&&next>(prs[exId]||0))setPRs(p=>({...p,[exId]:next}));saveWeight(tab,week,exId,next);
+  };
+  const commitWeightEdit=(exId)=>{const v=parseFloat(editVal);if(!isNaN(v)&&v>=0){const next=snapToIncrement(v,exId,exSettings);const k=`${tab}_w${week}_${exId}`;setAdj(p=>({...p,[k]:next}));if(PR_EXERCISES.includes(exId)&&next>(prs[exId]||0))setPRs(p=>({...p,[exId]:next}));saveWeight(tab,week,exId,next);}setEditingW(null);};
   const saveSetToDb=async(day,wk,setKey,completed)=>{if(!session)return;await supabase.from("completed_sets").upsert({user_id:session.user.id,day,week:wk,set_key:setKey,completed,updated_at:new Date().toISOString()},{onConflict:"user_id,day,week,set_key"});};
   const getCC=(exId,totalSets,isBO=false)=>{const pre=isBO?`${tab}_w${week}_${exId}_bo`:`${tab}_w${week}_${exId}_s`;let c=0;for(let i=0;i<totalSets;i++){if(done[`${pre}${i}`])c++;}return c;};
   const completeNextSet=(exId,totalSets,groupRest,groupLabel,isBO=false)=>{
@@ -923,7 +1085,7 @@ export default function App(){
   if(userProgress===undefined) return <div style={{background:DS.bg,minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:DS.labelTert,fontSize:"15px",fontFamily:DS.font}}>Loading your plan…</div>;
   if(userProgress===null||!userProgress.setup_complete) return <OnboardingScreen session={session} onComplete={()=>loadProgress()}/>;
   if(screen==="settings") return <SettingsScreen session={session} userProgress={userProgress} onBack={()=>setScreen("workout")} onSave={()=>{loadProgress();setScreen("workout");}}/>;
-  if(screen==="progress") return <ProgressScreen session={session} adj={adj} onBack={()=>setScreen("workout")}/>;
+  if(screen==="progress") return <ProgressScreen session={session} adj={adj} userProgress={userProgress} completedSessions={completedSessions} currentWeek={week} onBack={()=>setScreen("workout")}/>;
 
   const day=PLAN[tab];const wi=week-1;const phase=PHASES[wi];const pc=PHASE_COLORS[phase];
   const mobility=MOBILITY[tab];
@@ -952,16 +1114,37 @@ export default function App(){
 
       {/* ── NAV BAR ── */}
       <div style={{position:"sticky",top:0,zIndex:20,background:"rgba(0,0,0,0.85)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderBottom:`0.5px solid ${DS.sep}`}}>
-        {/* Top row */}
+        {/* Top row: phase timeline left, icons right */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 16px 8px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-            <span style={{fontSize:"17px",fontWeight:600,color:DS.label,letterSpacing:"-0.2px"}}>Workout Tracker</span>
-            <span style={{fontSize:"11px",fontWeight:600,color:pc,background:`${pc}18`,padding:"2px 8px",borderRadius:"12px",letterSpacing:"0.3px"}}>{phase}</span>
+          {/* Phase timeline */}
+          <div style={{flex:1,marginRight:"12px"}}>
+            <div style={{display:"flex",alignItems:"baseline",gap:"6px",marginBottom:"5px"}}>
+              <span style={{fontSize:"15px",fontWeight:600,color:pc,letterSpacing:"-0.2px"}}>{phase}</span>
+              <span style={{fontSize:"12px",color:DS.labelTert}}>
+                {(()=>{const seg=PHASE_SEGS.find(s=>s.weeks.includes(week));return seg?`Wk ${week-seg.weeks[0]+1} of ${seg.weeks.length}`:"";})()}
+              </span>
+            </div>
+            <div style={{display:"flex",gap:"3px",alignItems:"center"}}>
+              {PHASE_SEGS.map(seg=>{
+                const past=seg.weeks[seg.weeks.length-1]<week;
+                const current=seg.weeks.includes(week);
+                const pct=past?100:current?Math.round((week-seg.weeks[0]+1)/seg.weeks.length*100):0;
+                return(
+                  <div key={seg.name} style={{flex:1}}>
+                    <div style={{height:"3px",background:DS.surfaceEl,borderRadius:"2px",overflow:"hidden"}}>
+                      <div style={{width:`${pct}%`,height:"100%",background:seg.color,transition:"width 0.4s ease"}}/>
+                    </div>
+                    <div style={{fontSize:"9px",color:current?seg.color:past?DS.labelTert:DS.labelQuat,marginTop:"2px",fontWeight:current?600:400,letterSpacing:"0.2px"}}>{seg.name}</div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+          {/* Icon buttons — no text labels */}
+          <div style={{display:"flex",alignItems:"center",gap:"6px",flexShrink:0}}>
             <IconBtn onPress={()=>setScreen("progress")} icon={Ico.chart(18)} tint={DS.labelSec}/>
             <IconBtn onPress={()=>setScreen("settings")} icon={Ico.settings(18)} tint={DS.labelSec}/>
-            <Btn onPress={()=>supabase.auth.signOut()} style={{background:DS.fillTert,borderRadius:"16px",padding:"0 12px",height:"30px",color:DS.labelTert,fontSize:"13px"}}>Log out</Btn>
+            <IconBtn onPress={()=>supabase.auth.signOut()} icon={Ico.logout(17)} tint={DS.labelTert}/>
           </div>
         </div>
         {/* Week progression row — 12 tappable segments */}
@@ -970,9 +1153,10 @@ export default function App(){
             const wk=i+1;
             const allDone=['chest_tri','back_shoulder_bi','legs'].every(t=>completedSessions.includes(`${t}_w${wk}`));
             const isCurrent=wk===week;
+            const wkPhaseColor=PHASE_SEGS.find(s=>s.weeks.includes(wk))?.color||DS.labelTert;
             return(
-              <Btn key={wk} onPress={()=>changeWeek(wk)} style={{flex:1,height:"18px",borderRadius:"3px",background:allDone?DS.green:isCurrent?`${day.accent}50`:DS.surfaceEl,border:`0.5px solid ${allDone?DS.green:isCurrent?day.accent:DS.surfaceEl2}`,display:"flex",alignItems:"center",justifyContent:"center",padding:0,transition:"all 0.15s"}}>
-                <span style={{fontSize:"8px",color:allDone?"#fff":isCurrent?day.accent:DS.labelTert,fontWeight:isCurrent||allDone?700:400}}>{allDone?"✓":wk}</span>
+              <Btn key={wk} onPress={()=>changeWeek(wk)} style={{flex:1,height:"18px",borderRadius:"3px",background:allDone?"rgba(255,255,255,0.15)":isCurrent?`${day.accent}50`:DS.surfaceEl,border:`0.5px solid ${allDone?"rgba(255,255,255,0.3)":isCurrent?day.accent:DS.surfaceEl2}`,display:"flex",alignItems:"center",justifyContent:"center",padding:0,transition:"all 0.15s"}}>
+                <span style={{fontSize:"8px",color:allDone?DS.label:isCurrent?day.accent:DS.labelTert,fontWeight:isCurrent||allDone?700:400}}>{allDone?"✓":wk}</span>
               </Btn>
             );
           })}
@@ -984,8 +1168,8 @@ export default function App(){
               const sessionDone=completedSessions.includes(`${key}_w${week}`);const isActive=tab===key;
               return(
                 <Btn key={key} onPress={()=>changeTab(key)} style={{flex:1,padding:"7px 4px",background:isActive?DS.surfaceEl2:"transparent",borderRadius:DS.r8,color:isActive||sessionDone?DS.label:DS.labelTert,fontSize:"12px",fontWeight:isActive?600:400,lineHeight:1.3,textAlign:"center",position:"relative",transition:"all 0.18s"}}>
-                  {sessionDone&&!isActive&&<span style={{position:"absolute",top:"3px",right:"5px",fontSize:"7px",color:DS.green,fontWeight:700}}>✓</span>}
-                  <div style={{fontSize:"13px",fontWeight:isActive?600:400,color:isActive?day.accent:sessionDone?DS.green:DS.labelTert}}>{d.day}</div>
+                  {sessionDone&&!isActive&&<span style={{position:"absolute",top:"3px",right:"5px",fontSize:"7px",color:DS.labelSec,fontWeight:700}}>✓</span>}
+                  <div style={{fontSize:"13px",fontWeight:isActive?600:400,color:isActive?day.accent:sessionDone?DS.labelSec:DS.labelTert}}>{d.day}</div>
                   <div style={{fontSize:"10px",color:isActive?DS.labelSec:DS.labelTert}}>{d.label.split(" ")[0]}</div>
                 </Btn>
               );
@@ -1043,6 +1227,160 @@ export default function App(){
           </div>}
         </div>
 
+        {/* ── START WORKOUT BUTTON ── */}
+        {!focusMode&&(
+          <Btn onPress={()=>{setFocusMode(true);setFocusGi(0);}} style={{width:"100%",height:"50px",background:day.accent,borderRadius:DS.r12,color:day.accent===DS.blue?"#fff":"#000",fontSize:"17px",fontWeight:600,marginBottom:"24px",letterSpacing:"-0.2px",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Start Workout
+          </Btn>
+        )}
+
+        {/* ── FOCUS MODE ── */}
+        {focusMode&&(()=>{
+          const group=day.groups[focusGi];
+          const isLast=focusGi===day.groups.length-1;
+          const groupAllDone=group.exercises.every(ex=>getCC(ex.id,ex.sets[wi],false)>=ex.sets[wi]);
+          return(
+            <div style={{marginBottom:"24px"}}>
+              {/* Focus mode header */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                  <span style={{fontSize:"15px",fontWeight:600,color:day.accent}}>{group.label}</span>
+                  <span style={{fontSize:"12px",color:DS.labelTert}}>{focusGi+1} of {day.groups.length}</span>
+                </div>
+                <Btn onPress={()=>setFocusMode(false)} style={{background:DS.fillTert,borderRadius:"14px",padding:"4px 12px",color:DS.labelSec,fontSize:"13px"}}>Overview</Btn>
+              </div>
+              {/* Render only this group's exercises */}
+              {group.supersetted&&(
+                <div style={{background:DS.surface,borderRadius:DS.r10,padding:"10px 14px",marginBottom:"10px",borderLeft:`2.5px solid ${day.accent}`}}>
+                  <span style={{fontSize:"14px",fontWeight:600,color:day.accent}}>Superset: </span>
+                  <span style={{fontSize:"14px",color:DS.labelSec}}>Alternate between both exercises. Rest {parseRest(group.rest)}s after completing a round of both.</span>
+                </div>
+              )}
+              {group.exercises.map((ex)=>{
+                const w=getW(ex.id,wi),prevW=getPrevW(ex.id,wi),w1base=getW1(ex.id);
+                const s=ex.sets[wi],r=ex.reps[wi],bo=ex.backoff[wi];
+                const wLabel=ex.isPullup?(w===0?"BW":`+${w}`):`${w}`;
+                const isAdj=adj[`${tab}_w${week}_${ex.id}`]!==undefined;
+                const cues=FORM_CUES[ex.id],isOpen=cueOpen[ex.id];
+                const delta=(week>1&&prevW!==null)?Math.round((w-prevW)*10)/10:null;
+                const isPR=PR_EXERCISES.includes(ex.id)&&prs[ex.id]&&w>0&&w>=prs[ex.id]&&isAdj;
+                const cc=getCC(ex.id,s,false);
+                const boCount=bo?getCC(ex.id,bo.sets,true):0;
+                const currentRating=ratings[`${tab}_w${week}_${ex.id}`];
+                const allSetsDone=cc>=s;
+                const showW1Progress=week>1&&w1base>0&&w!==w1base;
+                const RATING_OPTS_F=[{v:"too_easy",label:"Too Easy",color:DS.green},{v:"just_right",label:"Just Right",color:DS.orange},{v:"too_hard",label:"Too Hard",color:DS.red}];
+                return(
+                  <div key={ex.id} style={{background:DS.surface,borderRadius:DS.r16,overflow:"hidden",marginBottom:"10px"}}>
+                    {cc>0&&<div style={{height:"3px",background:`${day.accent}20`}}><div style={{height:"100%",width:`${(cc/s)*100}%`,background:allSetsDone?DS.green:day.accent,transition:"width 0.3s ease"}}/></div>}
+                    <div style={{padding:"16px"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"14px"}}>
+                        <div style={{flex:1}}>
+                          <div style={{display:"flex",alignItems:"center",gap:"7px",flexWrap:"wrap"}}>
+                            <span style={{fontSize:"17px",fontWeight:600,color:DS.label,letterSpacing:"-0.2px"}}>{ex.name}</span>
+                            {isPR&&<span style={{fontSize:"10px",fontWeight:700,color:"#000",background:day.accent,padding:"2px 7px",borderRadius:"10px"}}>PR</span>}
+                          </div>
+                          {ex.note&&<div style={{fontSize:"12px",color:DS.labelTert,marginTop:"2px"}}>{ex.note}</div>}
+                        </div>
+                        {cues&&<IconBtn onPress={()=>setCueOpen(p=>({...p,[ex.id]:!p[ex.id]}))} icon={Ico.info(16)} tint={isOpen?day.accent:DS.labelTert} bg={isOpen?`${day.accent}18`:DS.fillTert}/>}
+                      </div>
+                      {isOpen&&cues&&(
+                        <div className="reveal" style={{marginBottom:"14px",padding:"13px 14px",background:DS.surfaceEl,borderRadius:DS.r10,borderLeft:`2.5px solid ${day.accent}`}}>
+                          <div style={{fontSize:"11px",fontWeight:700,color:day.accent,letterSpacing:"0.5px",marginBottom:"5px",textTransform:"uppercase"}}>Setup</div>
+                          <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.55,marginBottom:"10px"}}>{cues.setup}</div>
+                          <div style={{fontSize:"11px",fontWeight:700,color:day.accent,letterSpacing:"0.5px",marginBottom:"5px",textTransform:"uppercase"}}>Cues</div>
+                          <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.55}}>{cues.cues}</div>
+                        </div>
+                      )}
+                      {/* Weight hero */}
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"0",marginBottom:"12px"}}>
+                        <Btn onPress={()=>adjustW(ex.id,wi,-1)} style={{width:"44px",height:"44px",background:DS.fillTert,borderRadius:"50%",color:DS.labelSec,fontSize:"22px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>−</Btn>
+                        <div style={{flex:1,textAlign:"center",padding:"4px 8px"}}>
+                          {editingW===ex.id?(
+                            <input autoFocus type="number" inputMode="decimal" value={editVal} onChange={e=>setEditVal(e.target.value)} onBlur={()=>commitWeightEdit(ex.id)} onKeyDown={e=>{if(e.key==='Enter')commitWeightEdit(ex.id);}} style={{width:"100%",background:DS.surfaceEl,border:`1.5px solid ${day.accent}`,borderRadius:DS.r10,color:DS.label,fontFamily:DS.fontMono,fontSize:"32px",textAlign:"center",padding:"8px",fontWeight:300}}/>
+                          ):(
+                            <div onClick={()=>{setEditingW(ex.id);setEditVal(String(w));}} style={{cursor:"pointer"}}>
+                              <span style={{fontFamily:DS.fontMono,fontSize:"52px",fontWeight:300,color:isAdj?day.accent:DS.label,letterSpacing:"-2px",lineHeight:1}}>{wLabel}</span>
+                              <span style={{fontSize:"16px",color:DS.labelSec,marginLeft:"4px"}}>{ex.isPullup&&w>0?"lbs":!ex.isPullup?"lbs":""}</span>
+                            </div>
+                          )}
+                        </div>
+                        <Btn onPress={()=>adjustW(ex.id,wi,1)} style={{width:"44px",height:"44px",background:DS.fillTert,borderRadius:"50%",color:DS.labelSec,fontSize:"22px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>+</Btn>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",marginBottom:"12px"}}>
+                        <div style={{background:DS.fillTert,borderRadius:DS.r8,padding:"5px 12px",display:"flex",alignItems:"center",gap:"4px"}}>
+                          <span style={{fontFamily:DS.fontMono,fontSize:"17px",color:DS.label}}>{s}</span><span style={{fontSize:"12px",color:DS.labelTert}}>sets</span>
+                          <span style={{fontSize:"14px",color:DS.sep,margin:"0 2px"}}>×</span>
+                          <span style={{fontFamily:DS.fontMono,fontSize:"17px",color:DS.label}}>{r}</span><span style={{fontSize:"12px",color:DS.labelTert}}>reps</span>
+                        </div>
+                        {showW1Progress&&<div style={{background:`${DS.green}12`,borderRadius:DS.r8,padding:"5px 10px"}}><span style={{fontSize:"11px",color:DS.green,fontWeight:500}}>{w1base}→{w} lbs</span></div>}
+                        {delta!==null&&delta!==0&&<div style={{background:delta>0?`${DS.green}12`:`${DS.red}12`,borderRadius:DS.r8,padding:"5px 10px"}}><span style={{fontSize:"11px",color:delta>0?DS.green:DS.red,fontWeight:500,fontFamily:DS.fontMono}}>{delta>0?`+${delta}`:delta}</span></div>}
+                      </div>
+                      <div style={{background:DS.surfaceEl,borderRadius:DS.r10,padding:"12px"}}>
+                        <div style={{display:"flex",gap:"3px",marginBottom:"10px",alignItems:"center"}}>
+                          {Array(s).fill(null).map((_,si)=>(
+                            <div key={si} style={{flex:1,height:"3px",borderRadius:"2px",background:si<cc?day.accent:DS.surfaceEl2,transition:"background 0.2s"}}/>
+                          ))}
+                          <span style={{fontSize:"12px",color:DS.labelTert,marginLeft:"8px",flexShrink:0,fontFamily:DS.fontMono}}>{cc}/{s}</span>
+                        </div>
+                        <div style={{display:"flex",gap:"8px"}}>
+                          {cc<s?(
+                            <Btn onPress={()=>completeNextSet(ex.id,s,group.rest,group.label,false)} style={{flex:1,height:"50px",background:day.accent,borderRadius:DS.r10,color:day.accent===DS.blue?"#fff":"#000",fontSize:"16px",fontWeight:600}}>
+                              Complete Set {cc+1}
+                            </Btn>
+                          ):(
+                            <div style={{flex:1,height:"50px",display:"flex",alignItems:"center",justifyContent:"center",background:`${DS.green}12`,borderRadius:DS.r10,gap:"6px",color:DS.green,fontSize:"14px",fontWeight:500}}>
+                              {Ico.check(14)}<span>All sets done</span>
+                            </div>
+                          )}
+                          {cc>0&&<Btn onPress={()=>undoLastSet(ex.id,s,false)} style={{height:"50px",width:"50px",background:DS.fillTert,borderRadius:DS.r10,color:DS.labelTert,display:"flex",alignItems:"center",justifyContent:"center"}}>{Ico.undo(15)}</Btn>}
+                        </div>
+                      </div>
+                      {allSetsDone&&(
+                        <div className="reveal" style={{marginTop:"10px",padding:"10px 12px",background:DS.fillTert,borderRadius:DS.r10}}>
+                          <div style={{fontSize:"12px",color:DS.labelTert,marginBottom:"8px",fontWeight:500,textTransform:"uppercase",letterSpacing:"0.4px"}}>How did that feel?</div>
+                          <div style={{display:"flex",gap:"6px"}}>
+                            {RATING_OPTS_F.map(({v,label,color})=>(
+                              <Btn key={v} onPress={()=>setRating(ex.id,v)} style={{flex:1,padding:"8px 4px",background:currentRating===v?`${color}20`:DS.surface,borderRadius:DS.r8,color:currentRating===v?color:DS.labelTert,fontSize:"12px",fontWeight:currentRating===v?600:400,transition:"all 0.15s",border:currentRating===v?`0.5px solid ${color}`:"none"}}>
+                                {label}
+                              </Btn>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {/* Focus mode nav */}
+              <div style={{display:"flex",gap:"8px",marginTop:"8px"}}>
+                {focusGi>0&&<Btn onPress={()=>setFocusGi(p=>p-1)} style={{flex:1,height:"44px",background:DS.surface,borderRadius:DS.r10,color:DS.labelSec,fontSize:"15px",fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>
+                  {Ico.chevLeft(14)}<span>Previous</span>
+                </Btn>}
+                {!isLast?(
+                  <Btn onPress={()=>setFocusGi(p=>p+1)} style={{flex:2,height:"44px",background:groupAllDone?day.accent:DS.surfaceEl,borderRadius:DS.r10,color:groupAllDone?(day.accent===DS.blue?"#fff":"#000"):DS.labelSec,fontSize:"15px",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",transition:"all 0.2s"}}>
+                    <span>Next</span>{Ico.chevRight(14)}
+                  </Btn>
+                ):(
+                  <Btn onPress={handleFinishWorkout} disabled={processingRatings} style={{flex:2,height:"44px",background:DS.green,borderRadius:DS.r10,color:"#000",fontSize:"15px",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>
+                    <span>{processingRatings?"Processing…":"End Workout"}</span>
+                    {!processingRatings&&Ico.check(14)}
+                  </Btn>
+                )}
+              </div>
+              {/* Timer */}
+              <div style={{display:"flex",justifyContent:"center",marginTop:"10px"}}>
+                <Btn onPress={()=>startTimer(group.rest,`${group.label} · ${group.rest}`)} style={{background:"none",color:DS.labelTert,fontSize:"13px",display:"flex",alignItems:"center",gap:"5px"}}>
+                  {Ico.timer(13)}<span>Start rest timer ({parseRest(group.rest)}s)</span>
+                </Btn>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── EXERCISE GROUPS (overview) ── */}
+        {!focusMode&&<>
         {/* ── EXERCISE GROUPS ── */}
         {day.groups.map((group,gi)=>(
           <div key={gi} style={{marginBottom:"28px"}}>
@@ -1222,14 +1560,15 @@ export default function App(){
             })}
           </div>
         ))}
+        </>}
 
         {/* Core finisher */}
-        <div style={{padding:"13px 16px",marginBottom:"14px",background:DS.surface,borderRadius:DS.r12,fontSize:"15px",color:DS.labelSec}}>+ Core finisher — your standard routine</div>
+        {!focusMode&&<div style={{padding:"13px 16px",marginBottom:"14px",background:DS.surface,borderRadius:DS.r12,fontSize:"15px",color:DS.labelSec}}>+ Core finisher — your standard routine</div>}
 
-        {/* Finish workout */}
-        <Btn onPress={handleFinishWorkout} disabled={processingRatings} style={{width:"100%",height:"50px",background:processingRatings?DS.surfaceEl:`${day.accent}18`,border:`0.5px solid ${processingRatings?DS.sep:day.accent}40`,borderRadius:DS.r12,color:processingRatings?DS.labelTert:day.accent,fontSize:"17px",fontWeight:600,marginBottom:"28px",letterSpacing:"-0.2px"}}>
+        {/* Finish workout (overview mode only — focus mode has its own end workout) */}
+        {!focusMode&&<Btn onPress={handleFinishWorkout} disabled={processingRatings} style={{width:"100%",height:"50px",background:processingRatings?DS.surfaceEl:`${day.accent}18`,border:`0.5px solid ${processingRatings?DS.sep:day.accent}40`,borderRadius:DS.r12,color:processingRatings?DS.labelTert:day.accent,fontSize:"17px",fontWeight:600,marginBottom:"28px",letterSpacing:"-0.2px"}}>
           {processingRatings?"Processing ratings…":"Finish Workout"}
-        </Btn>
+        </Btn>}
 
         {/* Week 1 debrief */}
         {week===1&&(
@@ -1286,7 +1625,7 @@ export default function App(){
             <div style={{fontSize:"17px",fontWeight:600,color:DS.label,marginBottom:"12px"}}>Session Feedback</div>
             <textarea value={feedback} onChange={e=>setFeedback(e.target.value)} placeholder={'Additional notes?\n\ne.g. "bench felt heavy, shoulder was tight"'} style={{width:"100%",minHeight:"80px",background:DS.surfaceEl,border:`0.5px solid ${DS.sep}`,borderRadius:DS.r10,color:DS.label,fontSize:"15px",padding:"12px 14px",resize:"vertical",lineHeight:1.5}}/>
             <div style={{marginTop:"10px"}}>
-              <PrimaryBtn onPress={handleFeedback} label={loading?"Analyzing…":"Adjust Weights"} loading={loading} disabled={!feedback.trim()} color={day.accent} textColor={day.accent===DS.orange||day.accent===DS.green?"#000":"#fff"}/>
+              <PrimaryBtn onPress={handleFeedback} label={loading?"Analyzing…":"Adjust Weights"} loading={loading} disabled={!feedback.trim()} color={day.accent} textColor={day.accent===DS.orange||day.accent===DS.indigo?"#000":"#fff"}/>
             </div>
             {aiRes&&(
               <div className="reveal" style={{marginTop:"12px",padding:"14px",background:DS.surfaceEl,borderRadius:DS.r10}}>
