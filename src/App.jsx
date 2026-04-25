@@ -946,7 +946,7 @@ export default function App(){
   const[gapLastWeek,setGapLastWeek]=useState(0);
   const[exSettings,setExSettings]=useState({});
   const[focusMode,setFocusMode]=useState(false);
-  const[focusGi,setFocusGi]=useState(0);
+  const[focusGi,setFocusGi]=useState(-1);
   const timerRef=useRef(null);
 
   useEffect(()=>{
@@ -1222,35 +1222,13 @@ export default function App(){
       {/* ── CONTENT ── */}
       <div style={{padding:"0 16px",marginTop:"16px"}}>
 
-        {/* ── MOBILITY ── */}
-        <div style={{marginBottom:"24px"}}>
-          <Btn onPress={()=>setMobOpen(p=>!p)} style={{width:"100%",background:"none",padding:"0 0 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <span style={{fontSize:"13px",fontWeight:600,color:DS.labelSec,letterSpacing:"0.5px",textTransform:"uppercase"}}>Pre-Workout Mobility</span>
-            <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-              <span style={{fontSize:"12px",color:DS.labelTert}}>~2-3 min</span>
-              <span style={{fontSize:"12px",color:DS.labelTert,display:"inline-block",transform:mobOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.2s"}}>▼</span>
-            </div>
-          </Btn>
-          {mobOpen&&<div className="reveal" style={{background:DS.surface,borderRadius:DS.r12,overflow:"hidden"}}>
-            {mobility.map((move,mi)=>(
-              <div key={mi} style={{padding:"13px 16px",borderBottom:mi<mobility.length-1?`0.5px solid ${DS.sep}`:"none"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:"4px"}}>
-                  <span style={{fontSize:"15px",fontWeight:500,color:DS.label}}>{move.name}</span>
-                  <span style={{fontSize:"12px",color:DS.labelTert}}>{move.timing}</span>
-                </div>
-                <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.55}}>{move.instructions}</div>
-              </div>
-            ))}
-          </div>}
-        </div>
-
         {/* ── START WORKOUT BUTTON ── */}
         {!focusMode&&(
           <>
             <div style={{padding:"10px 14px",marginBottom:"12px",background:DS.surface,borderRadius:DS.r10}}>
               <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.5}}>{day.notes[wi]}</div>
             </div>
-            <Btn onPress={()=>{setFocusMode(true);setFocusGi(0);window.scrollTo({top:0,behavior:'smooth'});}} style={{width:"100%",height:"50px",background:day.accent,borderRadius:DS.r12,color:day.accent===DS.blue?"#fff":"#000",fontSize:"17px",fontWeight:600,marginBottom:"24px",letterSpacing:"-0.2px",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}>
+            <Btn onPress={()=>{setFocusMode(true);setFocusGi(-1);window.scrollTo({top:0,behavior:'smooth'});}} style={{width:"100%",height:"50px",background:day.accent,borderRadius:DS.r12,color:day.accent===DS.blue?"#fff":"#000",fontSize:"17px",fontWeight:600,marginBottom:"24px",letterSpacing:"-0.2px",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
               Start Workout
             </Btn>
@@ -1259,6 +1237,35 @@ export default function App(){
 
         {/* ── FOCUS MODE ── */}
         {focusMode&&(()=>{
+          // Step -1: mobility warm-up
+          if(focusGi===-1){
+            return(
+              <div style={{marginBottom:"24px"}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px"}}>
+                  <div>
+                    <div style={{fontSize:"13px",fontWeight:600,color:DS.labelSec,letterSpacing:"0.5px",textTransform:"uppercase",marginBottom:"2px"}}>Before You Start</div>
+                    <div style={{fontSize:"11px",color:DS.labelTert}}>~2-3 min · complete before first exercise</div>
+                  </div>
+                </div>
+                <div style={{background:DS.surface,borderRadius:DS.r16,overflow:"hidden",marginBottom:"16px"}}>
+                  {mobility.map((move,mi)=>(
+                    <div key={mi} style={{padding:"14px 16px",borderBottom:mi<mobility.length-1?`0.5px solid ${DS.sep}`:"none"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:"5px"}}>
+                        <span style={{fontSize:"16px",fontWeight:500,color:DS.label}}>{move.name}</span>
+                        <span style={{fontSize:"12px",color:DS.labelTert}}>{move.timing}</span>
+                      </div>
+                      <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.55}}>{move.instructions}</div>
+                    </div>
+                  ))}
+                </div>
+                <Btn onPress={()=>setFocusGi(0)} style={{width:"100%",height:"50px",background:day.accent,borderRadius:DS.r12,color:day.accent===DS.blue?"#fff":"#000",fontSize:"17px",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}>
+                  <span>Start Exercises</span>{Ico.chevRight(16)}
+                </Btn>
+              </div>
+            );
+          }
+
+          // Steps 0+: exercise groups
           const group=day.groups[focusGi];
           const isLast=focusGi===day.groups.length-1;
           const groupAllDone=group.exercises.every(ex=>getCC(ex.id,ex.sets[wi],false)>=ex.sets[wi]);
@@ -1378,9 +1385,9 @@ export default function App(){
               })}
               {/* Focus mode nav */}
               <div style={{display:"flex",gap:"8px",marginTop:"8px"}}>
-                {focusGi>0&&<Btn onPress={()=>setFocusGi(p=>p-1)} style={{flex:1,height:"44px",background:DS.surface,borderRadius:DS.r10,color:DS.labelSec,fontSize:"15px",fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>
-                  {Ico.chevLeft(14)}<span>Previous</span>
-                </Btn>}
+                <Btn onPress={()=>setFocusGi(p=>p-1)} style={{flex:1,height:"44px",background:DS.surface,borderRadius:DS.r10,color:DS.labelSec,fontSize:"15px",fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>
+                  {Ico.chevLeft(14)}<span>{focusGi===0?"Mobility":"Previous"}</span>
+                </Btn>
                 {!isLast?(
                   <Btn onPress={()=>setFocusGi(p=>p+1)} style={{flex:2,height:"44px",background:groupAllDone?day.accent:DS.surfaceEl,borderRadius:DS.r10,color:groupAllDone?(day.accent===DS.blue?"#fff":"#000"):DS.labelSec,fontSize:"15px",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",transition:"all 0.2s"}}>
                     <span>Next</span>{Ico.chevRight(14)}
