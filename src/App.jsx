@@ -996,17 +996,18 @@ function AppTour({step,onNext,onSkip,accent}){
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
         </svg>
       ),
-      arrow:"↗ Chart icon — top right of the header.",
+      arrow:"Chart icon 2014 top right of the header.",
     },
     {
       title:"Adjust settings",
       body:"The gear icon opens settings where you can change your training days, starting weights, and equipment constraints.",
       icon:(
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
         </svg>
       ),
-      arrow:"↗ Gear icon — next to the chart icon.",
+      arrow:"Gear icon — top right of the header.",
     },
     {
       title:"Start your workout",
@@ -1014,7 +1015,7 @@ function AppTour({step,onNext,onSkip,accent}){
       icon:(
         <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
       ),
-      arrow:"↓ Start Workout button — just below this tour.",
+      arrow:"Start Workout button 2014 just below this tour.",
     },
   ];
   const s=steps[step];
@@ -1046,35 +1047,36 @@ function AppTour({step,onNext,onSkip,accent}){
   );
 }
 
+// ── ORIENTATION ICONS (module level to avoid esbuild JSX-in-function issues) ─
+const OIcoSuperset=()=>(
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/>
+    <path d="M7 11v3a4 4 0 0 0 4 4h2a4 4 0 0 0 4-4v-3"/>
+  </svg>
+);
+const OIcoRIR=()=>(
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+    <path d="M8 12h3"/>
+  </svg>
+);
+const OIcoInfo=()=>(
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+  </svg>
+);
+
 // ── ORIENTATION CARD ───────────────────────────────────────────────────
 function OrientationCard({accent,onDismiss}){
-  const[step,setStep]=useState(0); // 0=how it works, 1=homescreen install
+  const[step,setStep]=useState(0);
   const[browser,setBrowser]=useState("safari");
-  // SVG icons matching design system
-  const IcoSuperset=()=>(
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/>
-      <path d="M7 11v3a4 4 0 0 0 4 4h2a4 4 0 0 0 4-4v-3"/>
-    </svg>
-  );
-  const IcoRIR=()=>(
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/>
-      <path d="M8 12h3"/>
-    </svg>
-  );
-  const IcoInfo2=()=>(
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
-    </svg>
-  );
   const items=[
-    {Icon:IcoSuperset,title:"Supersets",body:"Two exercises are grouped together. Alternate between them with no rest in between, then rest after completing both. This is more efficient than resting after every individual set."},
-    {Icon:IcoRIR,title:"2 Reps in Reserve",body:"Stop each set when you have 2 reps left before failure. This protects form and recovery so you perform consistently across all sets, every workout."},
-    {Icon:IcoInfo2,title:"Exercise Guides",body:"Tap the ⓘ icon on any exercise to see setup instructions, form cues, and a demo video — useful for any movement you're less familiar with."},
+    {Icon:OIcoSuperset,title:"Supersets",body:"Two exercises are grouped together. Alternate between them with no rest in between, then rest after completing both. More efficient than resting after every individual set."},
+    {Icon:OIcoRIR,title:"2 Reps in Reserve",body:"Stop each set when you have 2 reps left before failure. This protects form and recovery so you perform consistently across all sets, every workout."},
+    {Icon:OIcoInfo,title:"Exercise Guides",body:"Tap the \u24d8 icon on any exercise to see setup instructions, form cues, and a demo video — useful for any movement you're less familiar with."},
   ];
-  const safariSteps=["Open this page in Safari","Tap the Share button (□↑) at the bottom of the screen","Scroll down and tap \"Add to Home Screen\"","Tap \"Add\" in the top right corner"];
-  const chromeSteps=["Open this page in Chrome","Tap the More menu (⋮) at the top right","Tap \"Add to Home Screen\"","Tap \"Add\" to confirm"];
+  const safariSteps=["Open this page in Safari","Tap the Share button at the bottom of the screen","Scroll down and tap \"Add to Home Screen\"","Tap \"Add\" in the top right corner"];
+  const chromeSteps=["Open this page in Chrome","Tap the More menu (three dots) at the top right","Tap \"Add to Home Screen\"","Tap \"Add\" to confirm"];
 
   if(step===0) return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",backdropFilter:"blur(40px)",WebkitBackdropFilter:"blur(40px)",zIndex:150,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 20px",overflowY:"auto",fontFamily:DS.font}}>
@@ -1119,12 +1121,12 @@ function OrientationCard({accent,onDismiss}){
         </div>
         {/* Steps */}
         <div style={{background:DS.surface,borderRadius:DS.r12,overflow:"hidden",marginBottom:"18px"}}>
-          {(browser==="safari"?safariSteps:chromeSteps).map((step,i,arr)=>(
+          {(browser==="safari"?safariSteps:chromeSteps).map((st,i,arr)=>(
             <div key={i} style={{display:"flex",gap:"12px",alignItems:"flex-start",padding:"12px 16px",borderBottom:i<arr.length-1?`0.5px solid ${DS.sep}`:"none"}}>
               <div style={{width:"20px",height:"20px",borderRadius:"50%",background:`${accent}20`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px"}}>
                 <span style={{fontSize:"11px",fontWeight:700,color:accent}}>{i+1}</span>
               </div>
-              <span style={{fontSize:"14px",color:DS.labelSec,lineHeight:1.5}}>{step}</span>
+              <span style={{fontSize:"14px",color:DS.labelSec,lineHeight:1.5}}>{st}</span>
             </div>
           ))}
         </div>
