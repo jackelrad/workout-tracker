@@ -526,7 +526,7 @@ function SettingsScreen({session,userProgress,onBack,onSave}){
     </Btn>
   );
   return(
-    <div style={{background:DS.bg,minHeight:"100vh",color:DS.label,maxWidth:"480px",margin:"0 auto",paddingBottom:"96px",fontFamily:DS.font}}>
+    <div style={{background:DS.bg,minHeight:"100vh",color:DS.label,maxWidth:"480px",margin:"0 auto",paddingBottom:"96px",fontFamily:DS.font,overflowX:"hidden"}}>
       <style>{`html,body{background:#000;margin:0;padding:0;} *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;} button:active{opacity:0.65;transform:scale(0.96);} button{transition:opacity 0.12s,transform 0.1s;} input:focus{outline:none;}`}</style>
       {/* Nav bar */}
       <div style={{position:"sticky",top:0,zIndex:20,background:"rgba(0,0,0,0.85)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderBottom:`0.5px solid ${DS.sep}`,padding:"12px 20px 10px"}}>
@@ -548,73 +548,92 @@ function SettingsScreen({session,userProgress,onBack,onSave}){
           {[{label:"Chest & Triceps",a:DS.orange,val:d1,set:setD1},{label:"Back & Shoulders",a:DS.blue,val:d2,set:setD2},{label:"Legs",a:DS.indigo,val:d3,set:setD3}].map(({label:lbl,a,val,set})=>(
             <div key={lbl} style={{marginBottom:"20px"}}>
               <div style={{fontSize:"13px",fontWeight:600,color:a,marginBottom:"8px"}}>{lbl.toUpperCase()}</div>
-              <div style={{display:"flex",gap:"4px",background:DS.surfaceEl,borderRadius:DS.r10,padding:"2px"}}>{DAYS_SHORT.map((_,i)=>dayBtn(val,set,i))}</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"3px"}}>
+                {DAYS_SHORT.map((_,i)=>dayBtn(val,set,i))}
+              </div>
             </div>
           ))}
           <div style={{marginBottom:"20px"}}>
             <div style={{fontSize:"13px",fontWeight:600,color:DS.labelSec,marginBottom:"8px",textTransform:"uppercase"}}>Start Date</div>
             <input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} style={{width:"100%",background:DS.surface,border:`0.5px solid ${DS.sep}`,borderRadius:DS.r10,color:DS.label,fontFamily:DS.font,fontSize:"17px",padding:"14px 16px"}}/>
           </div>
+          {/* Manual week control — iOS toggle row */}
           <div style={{background:DS.surface,borderRadius:DS.r16,overflow:"hidden"}}>
-            <div style={{padding:"14px 16px",borderBottom:`0.5px solid ${DS.sep}`}}>
-              <div style={{fontSize:"17px",color:DS.label,marginBottom:"3px"}}>Manual week control</div>
-              <div style={{fontSize:"13px",color:DS.labelTert}}>Disables date-based auto-detection</div>
-            </div>
-            <Btn onPress={()=>setManualLock(p=>!p)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px",background:"transparent",textAlign:"left"}}>
-              <span style={{fontSize:"17px",color:manualLock?DS.label:DS.labelSec}}>Advance weeks manually</span>
-              <div style={{width:"28px",height:"28px",borderRadius:"50%",border:`1.5px solid ${manualLock?DS.blue:DS.labelTert}`,background:manualLock?DS.blue:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                {manualLock&&<span style={{color:"#fff"}}>{Ico.check(12)}</span>}
+            <Btn onPress={()=>setManualLock(p=>!p)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px",background:"transparent",textAlign:"left",gap:"12px"}}>
+              <div style={{flex:1}}>
+                <div style={{fontSize:"17px",color:DS.label,marginBottom:"3px"}}>Manual week control</div>
+                <div style={{fontSize:"13px",color:DS.labelTert,lineHeight:1.4}}>
+                  {manualLock
+                    ? "On — you advance weeks manually using the ‹ › arrows. Useful if you missed a week or want to repeat one."
+                    : "Off — the app opens to the correct week based on your start date automatically."}
+                </div>
+              </div>
+              {/* iOS-style toggle */}
+              <div style={{width:"51px",height:"31px",borderRadius:"15.5px",background:manualLock?DS.blue:"rgba(120,120,128,0.32)",flexShrink:0,position:"relative",transition:"background 0.2s"}}>
+                <div style={{position:"absolute",top:"2px",left:manualLock?"22px":"2px",width:"27px",height:"27px",borderRadius:"50%",background:"#fff",boxShadow:"0 1px 3px rgba(0,0,0,0.3)",transition:"left 0.18s ease"}}/>
               </div>
             </Btn>
           </div>
         </>)}
         {stab==="equipment"&&(
-          <div style={{background:DS.surface,borderRadius:DS.r16,overflow:"hidden"}}>
-            {EQUIPMENT_LIST.map((eq,i)=>(
-              <Row key={eq.id} label={eq.label} value={equipment[eq.id]} onToggle={()=>setEquipment(p=>({...p,[eq.id]:!p[eq.id]}))} last={i===EQUIPMENT_LIST.length-1}/>
-            ))}
+          <div>
+            <div style={{background:`${DS.blue}12`,borderRadius:DS.r10,padding:"12px 14px",marginBottom:"14px",fontSize:"14px",color:DS.labelSec,lineHeight:1.6}}>
+              Check everything available at your gym. The workout plan will only use exercises that match your equipment — anything unchecked will be substituted automatically.
+            </div>
+            <div style={{background:DS.surface,borderRadius:DS.r16,overflow:"hidden"}}>
+              {EQUIPMENT_LIST.map((eq,i)=>(
+                <Row key={eq.id} label={eq.label} value={equipment[eq.id]} onToggle={()=>setEquipment(p=>({...p,[eq.id]:!p[eq.id]}))} last={i===EQUIPMENT_LIST.length-1}/>
+              ))}
+            </div>
           </div>
         )}
         {["chest","back","legs"].map((t,ti)=>stab===t&&(
           <div key={t}>
-            <div style={{background:DS.surface,borderRadius:DS.r16,padding:"0 16px",overflow:"hidden",marginBottom:"16px"}}>
-              {Object.values(BENCH_FIELDS)[ti].map(f=>(<BenchInput key={f.id} label={f.label} hint={f.hint} value={benchmarks[f.id]} onChange={v=>setBenchmarks(p=>({...p,[f.id]:v}))} step={f.step} min={f.min} unit={f.unit} accent={DS.blue}/>))}
+            <div style={{fontSize:"13px",color:DS.labelTert,marginBottom:"12px",lineHeight:1.5}}>
+              Set your starting weights for each exercise. Use a weight you can do with 2 reps left before failure — not your max.
             </div>
-            <div style={{fontSize:"13px",fontWeight:600,color:DS.labelSec,marginBottom:"8px",textTransform:"uppercase",letterSpacing:"0.4px"}}>Equipment Constraints</div>
-            <div style={{fontSize:"13px",color:DS.labelTert,marginBottom:"12px",lineHeight:1.5}}>Optional. Set the increment, minimum, and maximum for each exercise based on your gym's equipment. Defaults are pre-filled.</div>
-            <div style={{background:DS.surface,borderRadius:DS.r16,overflow:"hidden"}}>
-              {Object.values(BENCH_FIELDS)[ti].filter(f=>f.unit==="lbs").map((f,fi,arr)=>{
+            <div style={{background:DS.surface,borderRadius:DS.r16,padding:"0 16px",overflow:"hidden",marginBottom:"8px"}}>
+              {Object.values(BENCH_FIELDS)[ti].map((f,fi,arr)=>{
+                const isExpanded=expandedEx===f.id;
                 const inc=localExSettings?.[f.id]?.increment??DEFAULT_EX_SETTINGS[f.id]?.increment??2.5;
                 const minW=localExSettings?.[f.id]?.minW??DEFAULT_EX_SETTINGS[f.id]?.minW??0;
-                const maxW=localExSettings?.[f.id]?.maxW??DEFAULT_EX_SETTINGS[f.id]?.maxW??null;
-                const isExpanded=expandedEx===f.id;
-                const isLast=fi===arr.length-1;
+                const maxWval=localExSettings?.[f.id]?.maxW??DEFAULT_EX_SETTINGS[f.id]?.maxW??null;
                 return(
-                  <div key={f.id} style={{borderBottom:isLast||isExpanded?"none":`0.5px solid ${DS.sep}`}}>
-                    <Btn onPress={()=>setExpandedEx(isExpanded?null:f.id)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"13px 16px",background:"transparent",textAlign:"left"}}>
-                      <span style={{fontSize:"15px",color:DS.label}}>{f.label}</span>
-                      <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                        <span style={{fontSize:"12px",color:DS.labelTert}}>±{inc}lbs</span>
-                        <span style={{fontSize:"11px",color:DS.labelTert,transform:isExpanded?"rotate(180deg)":"none",transition:"transform 0.2s"}}>▼</span>
-                      </div>
-                    </Btn>
-                    {isExpanded&&(
-                      <div className="reveal" style={{padding:"0 16px 14px",borderTop:`0.5px solid ${DS.sep}`}}>
-                        {[
-                          {label:"Increment (lbs)",key:"increment",val:inc,step:0.5,min:0.5},
-                          {label:"Minimum weight (lbs)",key:"minW",val:minW,step:1,min:0},
-                          {label:"Maximum weight (lbs)",key:"maxW",val:maxW||0,step:5,min:0,optional:true},
-                        ].map(({label:lbl,key,val,step,min:mn,optional})=>(
-                          <div key={key} style={{paddingTop:"12px"}}>
-                            <div style={{fontSize:"13px",color:DS.labelSec,marginBottom:"8px"}}>{lbl}{optional&&<span style={{color:DS.labelTert}}> (optional)</span>}</div>
-                            <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-                              <Btn onPress={()=>setExSetting(f.id,key,Math.max(mn,Math.round((val-step)*10)/10))} style={{width:"32px",height:"32px",background:DS.fillTert,borderRadius:"50%",color:DS.labelSec,fontSize:"18px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>−</Btn>
-                              <div style={{flex:1,textAlign:"center",fontFamily:DS.fontMono,fontSize:"20px",fontWeight:300,color:DS.label}}>{val||"—"}</div>
-                              <Btn onPress={()=>setExSetting(f.id,key,Math.round((val+step)*10)/10)} style={{width:"32px",height:"32px",background:DS.fillTert,borderRadius:"50%",color:DS.labelSec,fontSize:"18px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>+</Btn>
-                            </div>
+                  <div key={f.id} style={{borderBottom:fi<arr.length-1&&!isExpanded?`0.5px solid ${DS.sep}`:"none"}}>
+                    <BenchInput label={f.label} hint={f.hint} value={benchmarks[f.id]} onChange={v=>setBenchmarks(p=>({...p,[f.id]:v}))} step={f.step} min={f.min} unit={f.unit} accent={DS.blue}/>
+                    {f.unit==="lbs"&&(
+                      <>
+                        <Btn onPress={()=>setExpandedEx(isExpanded?null:f.id)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0 12px",background:"transparent",textAlign:"left"}}>
+                          <span style={{fontSize:"12px",color:DS.blue,fontWeight:500}}>Equipment settings</span>
+                          <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                            <span style={{fontSize:"11px",color:DS.labelTert}}>±{inc}lbs</span>
+                            <span style={{fontSize:"10px",color:DS.labelTert,display:"inline-block",transform:isExpanded?"rotate(180deg)":"none",transition:"transform 0.2s"}}>▼</span>
                           </div>
-                        ))}
-                      </div>
+                        </Btn>
+                        {isExpanded&&(
+                          <div className="reveal" style={{padding:"12px 0 16px",borderTop:`0.5px solid ${DS.sep}`,display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px",marginBottom:"4px"}}>
+                            {[
+                              {label:"Increment",key:"increment",val:inc,placeholder:"e.g. 2.5"},
+                              {label:"Min weight",key:"minW",val:minW,placeholder:"e.g. 20"},
+                              {label:"Max weight",key:"maxW",val:maxWval||"",placeholder:"optional"},
+                            ].map(({label:lbl,key,val,placeholder})=>(
+                              <div key={key}>
+                                <div style={{fontSize:"11px",color:DS.labelTert,marginBottom:"5px"}}>{lbl}</div>
+                                <input
+                                  type="number" inputMode="decimal"
+                                  value={val===""||(val===null&&key==="maxW")?"":val}
+                                  placeholder={placeholder}
+                                  onChange={e=>{
+                                    const v=e.target.value===""?null:parseFloat(e.target.value);
+                                    setExSetting(f.id,key,v);
+                                  }}
+                                  style={{width:"100%",background:DS.surfaceEl,border:`0.5px solid ${DS.sep}`,borderRadius:DS.r8,color:DS.label,fontFamily:DS.fontMono,fontSize:"15px",fontWeight:300,padding:"8px 10px",textAlign:"center"}}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 );
@@ -1114,95 +1133,93 @@ export default function App(){
 
       {/* ── NAV BAR ── */}
       <div style={{position:"sticky",top:0,zIndex:20,background:"rgba(0,0,0,0.85)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderBottom:`0.5px solid ${DS.sep}`}}>
-        {/* Top row: phase timeline left, icons right */}
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 16px 8px"}}>
-          {/* Phase timeline */}
-          <div style={{flex:1,marginRight:"12px"}}>
-            <div style={{display:"flex",alignItems:"baseline",gap:"6px",marginBottom:"5px"}}>
-              <span style={{fontSize:"15px",fontWeight:600,color:pc,letterSpacing:"-0.2px"}}>{phase}</span>
-              <span style={{fontSize:"12px",color:DS.labelTert}}>
-                {(()=>{const seg=PHASE_SEGS.find(s=>s.weeks.includes(week));return seg?`Wk ${week-seg.weeks[0]+1} of ${seg.weeks.length}`:"";})()}
-              </span>
+        {focusMode?(
+          /* Focus mode: minimal — day name, completion %, prominent exit */
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+              <div style={{width:"8px",height:"8px",borderRadius:"50%",background:day.accent,flexShrink:0}}/>
+              <span style={{fontSize:"16px",fontWeight:600,color:DS.label}}>{day.label}</span>
+              <span style={{fontSize:"13px",color:DS.labelTert}}>Wk {week}</span>
             </div>
-            <div style={{display:"flex",gap:"3px",alignItems:"center"}}>
-              {PHASE_SEGS.map(seg=>{
-                const past=seg.weeks[seg.weeks.length-1]<week;
-                const current=seg.weeks.includes(week);
-                const pct=past?100:current?Math.round((week-seg.weeks[0]+1)/seg.weeks.length*100):0;
-                return(
-                  <div key={seg.name} style={{flex:1}}>
-                    <div style={{height:"3px",background:DS.surfaceEl,borderRadius:"2px",overflow:"hidden"}}>
-                      <div style={{width:`${pct}%`,height:"100%",background:seg.color,transition:"width 0.4s ease"}}/>
-                    </div>
-                    <div style={{fontSize:"9px",color:current?seg.color:past?DS.labelTert:DS.labelQuat,marginTop:"2px",fontWeight:current?600:400,letterSpacing:"0.2px"}}>{seg.name}</div>
-                  </div>
-                );
-              })}
+            <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+              <span style={{fontFamily:DS.fontMono,fontSize:"13px",color:pct===100?DS.green:DS.labelSec}}>{pct}%</span>
+              <Btn onPress={()=>setFocusMode(false)} style={{background:"transparent",border:`1px solid ${DS.sep}`,borderRadius:"14px",padding:"6px 16px",color:DS.labelSec,fontSize:"14px",fontWeight:500}}>Exit</Btn>
             </div>
           </div>
-          {/* Icon buttons — no text labels */}
-          <div style={{display:"flex",alignItems:"center",gap:"6px",flexShrink:0}}>
-            <IconBtn onPress={()=>setScreen("progress")} icon={Ico.chart(18)} tint={DS.labelSec}/>
-            <IconBtn onPress={()=>setScreen("settings")} icon={Ico.settings(18)} tint={DS.labelSec}/>
-            <IconBtn onPress={()=>supabase.auth.signOut()} icon={Ico.logout(17)} tint={DS.labelTert}/>
-          </div>
-        </div>
-        {/* Week progression row — 12 tappable segments */}
-        <div style={{display:"flex",gap:"3px",padding:"0 16px 8px"}}>
-          {Array(12).fill(null).map((_,i)=>{
-            const wk=i+1;
-            const allDone=['chest_tri','back_shoulder_bi','legs'].every(t=>completedSessions.includes(`${t}_w${wk}`));
-            const isCurrent=wk===week;
-            const wkPhaseColor=PHASE_SEGS.find(s=>s.weeks.includes(wk))?.color||DS.labelTert;
-            return(
-              <Btn key={wk} onPress={()=>changeWeek(wk)} style={{flex:1,height:"18px",borderRadius:"3px",background:allDone?"rgba(255,255,255,0.15)":isCurrent?`${day.accent}50`:DS.surfaceEl,border:`0.5px solid ${allDone?"rgba(255,255,255,0.3)":isCurrent?day.accent:DS.surfaceEl2}`,display:"flex",alignItems:"center",justifyContent:"center",padding:0,transition:"all 0.15s"}}>
-                <span style={{fontSize:"8px",color:allDone?DS.label:isCurrent?day.accent:DS.labelTert,fontWeight:isCurrent||allDone?700:400}}>{allDone?"✓":wk}</span>
-              </Btn>
-            );
-          })}
-        </div>
-        {/* Day tabs — iOS segmented control style */}
-        <div style={{padding:"0 16px 8px"}}>
-          <div style={{display:"flex",background:DS.surfaceEl,borderRadius:DS.r10,padding:"2px",gap:"2px"}}>
-            {Object.entries(PLAN).map(([key,d])=>{
-              const sessionDone=completedSessions.includes(`${key}_w${week}`);const isActive=tab===key;
-              return(
-                <Btn key={key} onPress={()=>changeTab(key)} style={{flex:1,padding:"7px 4px",background:isActive?DS.surfaceEl2:"transparent",borderRadius:DS.r8,color:isActive||sessionDone?DS.label:DS.labelTert,fontSize:"12px",fontWeight:isActive?600:400,lineHeight:1.3,textAlign:"center",position:"relative",transition:"all 0.18s"}}>
-                  {sessionDone&&!isActive&&<span style={{position:"absolute",top:"3px",right:"5px",fontSize:"7px",color:DS.labelSec,fontWeight:700}}>✓</span>}
-                  <div style={{fontSize:"13px",fontWeight:isActive?600:400,color:isActive?day.accent:sessionDone?DS.labelSec:DS.labelTert}}>{d.day}</div>
-                  <div style={{fontSize:"10px",color:isActive?DS.labelSec:DS.labelTert}}>{d.label.split(" ")[0]}</div>
-                </Btn>
-              );
-            })}
-          </div>
-        </div>
-        {/* Week selector + progress */}
-        <div style={{display:"flex",alignItems:"center",gap:"10px",padding:"0 16px 10px"}}>
-          <IconBtn onPress={()=>changeWeek(week-1)} icon={Ico.chevLeft(16)} tint={DS.labelSec}/>
-          <div style={{background:`${day.accent}14`,borderRadius:DS.r8,padding:"4px 12px",textAlign:"center",flexShrink:0}}>
-            <div style={{fontSize:"8px",color:day.accent,fontWeight:600,letterSpacing:"0.5px",textTransform:"uppercase"}}>Week</div>
-            <div style={{fontFamily:DS.fontMono,fontSize:"24px",fontWeight:300,color:day.accent,lineHeight:1,letterSpacing:"-1px"}}>{week}</div>
-            <div style={{fontSize:"8px",color:day.accent,opacity:.5}}>of 12</div>
-          </div>
-          <div style={{flex:1}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:"5px"}}>
-              <span style={{fontSize:"13px",color:DS.labelSec}}>{day.label}</span>
-              <span style={{fontSize:"13px",color:pct===100?DS.green:DS.labelTert,fontFamily:DS.fontMono}}>{pct}%</span>
+        ):(
+          /* Overview mode: full header */
+          <>
+            {/* Top row: phase timeline left, icons right */}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 16px 8px"}}>
+              {/* Phase timeline */}
+              <div style={{flex:1,marginRight:"12px"}}>
+                <div style={{display:"flex",alignItems:"baseline",gap:"6px",marginBottom:"5px"}}>
+                  <span style={{fontSize:"15px",fontWeight:600,color:pc,letterSpacing:"-0.2px"}}>{phase}</span>
+                  <span style={{fontSize:"12px",color:DS.labelTert}}>
+                    {(()=>{const seg=PHASE_SEGS.find(s=>s.weeks.includes(week));return seg?`Wk ${week-seg.weeks[0]+1} of ${seg.weeks.length}`:"";})()}
+                  </span>
+                </div>
+                <div style={{display:"flex",gap:"3px",alignItems:"center"}}>
+                  {PHASE_SEGS.map(seg=>{
+                    const past=seg.weeks[seg.weeks.length-1]<week;
+                    const current=seg.weeks.includes(week);
+                    const pct2=past?100:current?Math.round((week-seg.weeks[0]+1)/seg.weeks.length*100):0;
+                    return(
+                      <div key={seg.name} style={{flex:1}}>
+                        <div style={{height:"3px",background:DS.surfaceEl,borderRadius:"2px",overflow:"hidden"}}>
+                          <div style={{width:`${pct2}%`,height:"100%",background:seg.color,transition:"width 0.4s ease"}}/>
+                        </div>
+                        <div style={{fontSize:"9px",color:current?seg.color:past?DS.labelTert:DS.labelQuat,marginTop:"2px",fontWeight:current?600:400,letterSpacing:"0.2px"}}>{seg.name}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:"6px",flexShrink:0}}>
+                <IconBtn onPress={()=>setScreen("progress")} icon={Ico.chart(18)} tint={DS.labelSec}/>
+                <IconBtn onPress={()=>setScreen("settings")} icon={Ico.settings(18)} tint={DS.labelSec}/>
+                <IconBtn onPress={()=>supabase.auth.signOut()} icon={Ico.logout(17)} tint={DS.labelTert}/>
+              </div>
             </div>
-            <div style={{background:DS.surfaceEl,borderRadius:"3px",height:"3px",overflow:"hidden"}}>
-              <div style={{width:`${pct}%`,height:"100%",background:pct===100?DS.green:day.accent,borderRadius:"3px",transition:"width 0.4s ease"}}/>
+            {/* Day tabs */}
+            <div style={{padding:"0 16px 8px"}}>
+              <div style={{display:"flex",background:DS.surfaceEl,borderRadius:DS.r10,padding:"2px",gap:"2px"}}>
+                {Object.entries(PLAN).map(([key,d])=>{
+                  const sessionDone=completedSessions.includes(`${key}_w${week}`);const isActive=tab===key;
+                  return(
+                    <Btn key={key} onPress={()=>changeTab(key)} style={{flex:1,padding:"7px 4px",background:isActive?DS.surfaceEl2:"transparent",borderRadius:DS.r8,color:isActive||sessionDone?DS.label:DS.labelTert,fontSize:"12px",fontWeight:isActive?600:400,lineHeight:1.3,textAlign:"center",position:"relative",transition:"all 0.18s"}}>
+                      {sessionDone&&!isActive&&<span style={{position:"absolute",top:"3px",right:"5px",fontSize:"7px",color:DS.labelSec,fontWeight:700}}>✓</span>}
+                      <div style={{fontSize:"13px",fontWeight:isActive?600:400,color:isActive?day.accent:sessionDone?DS.labelSec:DS.labelTert}}>{d.day}</div>
+                      <div style={{fontSize:"10px",color:isActive?DS.labelSec:DS.labelTert}}>{d.label.split(" ")[0]}</div>
+                    </Btn>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-          <IconBtn onPress={()=>changeWeek(week+1)} icon={Ico.chevRight(16)} tint={DS.labelSec}/>
-        </div>
+            {/* Week selector + progress */}
+            <div style={{display:"flex",alignItems:"center",gap:"10px",padding:"0 16px 10px"}}>
+              <IconBtn onPress={()=>changeWeek(week-1)} icon={Ico.chevLeft(16)} tint={DS.labelSec}/>
+              <div style={{background:`${day.accent}14`,borderRadius:DS.r8,padding:"4px 12px",textAlign:"center",flexShrink:0}}>
+                <div style={{fontSize:"8px",color:day.accent,fontWeight:600,letterSpacing:"0.5px",textTransform:"uppercase"}}>Week</div>
+                <div style={{fontFamily:DS.fontMono,fontSize:"24px",fontWeight:300,color:day.accent,lineHeight:1,letterSpacing:"-1px"}}>{week}</div>
+                <div style={{fontSize:"8px",color:day.accent,opacity:.5}}>of 12</div>
+              </div>
+              <div style={{flex:1}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:"5px"}}>
+                  <span style={{fontSize:"13px",color:DS.labelSec}}>{day.label}</span>
+                  <span style={{fontSize:"13px",color:pct===100?DS.green:DS.labelTert,fontFamily:DS.fontMono}}>{pct}%</span>
+                </div>
+                <div style={{background:DS.surfaceEl,borderRadius:"3px",height:"3px",overflow:"hidden"}}>
+                  <div style={{width:`${pct}%`,height:"100%",background:pct===100?DS.green:day.accent,borderRadius:"3px",transition:"width 0.4s ease"}}/>
+                </div>
+              </div>
+              <IconBtn onPress={()=>changeWeek(week+1)} icon={Ico.chevRight(16)} tint={DS.labelSec}/>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* ── MOTIVATIONAL + COACHING NOTE ── */}
-      <div style={{margin:"14px 16px 4px",padding:"14px 16px",borderLeft:`3px solid ${day.accent}`,background:`${day.accent}08`,borderRadius:`0 ${DS.r8} ${DS.r8} 0`}}>
-        <div style={{fontSize:"15px",fontWeight:500,color:DS.label,marginBottom:"4px",lineHeight:1.4}}>{motiv}</div>
-        <div style={{fontSize:"14px",color:DS.labelSec,lineHeight:1.4}}>{day.notes[wi]}</div>
-      </div>
-
+      {/* ── CONTENT ── */}
       <div style={{padding:"0 16px",marginTop:"16px"}}>
 
         {/* ── MOBILITY ── */}
@@ -1229,10 +1246,15 @@ export default function App(){
 
         {/* ── START WORKOUT BUTTON ── */}
         {!focusMode&&(
-          <Btn onPress={()=>{setFocusMode(true);setFocusGi(0);}} style={{width:"100%",height:"50px",background:day.accent,borderRadius:DS.r12,color:day.accent===DS.blue?"#fff":"#000",fontSize:"17px",fontWeight:600,marginBottom:"24px",letterSpacing:"-0.2px",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Start Workout
-          </Btn>
+          <>
+            <div style={{padding:"10px 14px",marginBottom:"12px",background:DS.surface,borderRadius:DS.r10}}>
+              <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.5}}>{day.notes[wi]}</div>
+            </div>
+            <Btn onPress={()=>{setFocusMode(true);setFocusGi(0);window.scrollTo({top:0,behavior:'smooth'});}} style={{width:"100%",height:"50px",background:day.accent,borderRadius:DS.r12,color:day.accent===DS.blue?"#fff":"#000",fontSize:"17px",fontWeight:600,marginBottom:"24px",letterSpacing:"-0.2px",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Start Workout
+            </Btn>
+          </>
         )}
 
         {/* ── FOCUS MODE ── */}
@@ -1242,14 +1264,15 @@ export default function App(){
           const groupAllDone=group.exercises.every(ex=>getCC(ex.id,ex.sets[wi],false)>=ex.sets[wi]);
           return(
             <div style={{marginBottom:"24px"}}>
-              {/* Focus mode header */}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px"}}>
-                <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-                  <span style={{fontSize:"15px",fontWeight:600,color:day.accent}}>{group.label}</span>
-                  <span style={{fontSize:"12px",color:DS.labelTert}}>{focusGi+1} of {day.groups.length}</span>
-                </div>
-                <Btn onPress={()=>setFocusMode(false)} style={{background:DS.fillTert,borderRadius:"14px",padding:"4px 12px",color:DS.labelSec,fontSize:"13px"}}>Overview</Btn>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"14px"}}>
+              <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                <span style={{fontSize:"15px",fontWeight:600,color:day.accent}}>{group.label}</span>
+                <span style={{fontSize:"12px",color:DS.labelTert}}>{focusGi+1} of {day.groups.length}</span>
               </div>
+              {group.supersetted&&<Btn onPress={()=>setSSOpen(p=>({...p,[focusGi]:!p[focusGi]}))} style={{background:ssOpen[focusGi]?`${day.accent}18`:DS.fillTert,borderRadius:"12px",padding:"3px 10px",color:ssOpen[focusGi]?day.accent:DS.labelTert,fontSize:"11px",fontWeight:500}}>
+                {ssOpen[focusGi]?"hide":"what's a superset?"}
+              </Btn>}
+            </div>
               {/* Render only this group's exercises */}
               {group.supersetted&&(
                 <div style={{background:DS.surface,borderRadius:DS.r10,padding:"10px 14px",marginBottom:"10px",borderLeft:`2.5px solid ${day.accent}`}}>
