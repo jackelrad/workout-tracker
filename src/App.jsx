@@ -1324,7 +1324,7 @@ export default function App(){
                         </div>
                       )}
                       {/* Weight hero */}
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"0",marginBottom:"12px"}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"0",marginBottom:"10px"}}>
                         <Btn onPress={()=>adjustW(ex.id,wi,-1)} style={{width:"44px",height:"44px",background:DS.fillTert,borderRadius:"50%",color:DS.labelSec,fontSize:"22px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>−</Btn>
                         <div style={{flex:1,textAlign:"center",padding:"4px 8px"}}>
                           {editingW===ex.id?(
@@ -1338,21 +1338,29 @@ export default function App(){
                         </div>
                         <Btn onPress={()=>adjustW(ex.id,wi,1)} style={{width:"44px",height:"44px",background:DS.fillTert,borderRadius:"50%",color:DS.labelSec,fontSize:"22px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>+</Btn>
                       </div>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",marginBottom:"12px"}}>
-                        <div style={{background:DS.fillTert,borderRadius:DS.r8,padding:"5px 12px",display:"flex",alignItems:"center",gap:"4px"}}>
-                          <span style={{fontFamily:DS.fontMono,fontSize:"17px",color:DS.label}}>{s}</span><span style={{fontSize:"12px",color:DS.labelTert}}>sets</span>
-                          <span style={{fontSize:"14px",color:DS.sep,margin:"0 2px"}}>×</span>
-                          <span style={{fontFamily:DS.fontMono,fontSize:"17px",color:DS.label}}>{r}</span><span style={{fontSize:"12px",color:DS.labelTert}}>reps</span>
+                      {/* Sets × reps — clear prescription */}
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",marginBottom:"14px"}}>
+                        <div style={{display:"flex",alignItems:"baseline",gap:"3px"}}>
+                          <span style={{fontFamily:DS.fontMono,fontSize:"22px",fontWeight:400,color:DS.label}}>{s}</span>
+                          <span style={{fontSize:"13px",color:DS.labelTert}}>sets</span>
+                          <span style={{fontSize:"16px",color:DS.labelTert,margin:"0 4px"}}>×</span>
+                          <span style={{fontFamily:DS.fontMono,fontSize:"20px",fontWeight:400,color:DS.labelSec}}>{r}</span>
+                          <span style={{fontSize:"13px",color:DS.labelTert}}>reps</span>
                         </div>
-                        {showW1Progress&&<div style={{background:`${DS.green}12`,borderRadius:DS.r8,padding:"5px 10px"}}><span style={{fontSize:"11px",color:DS.green,fontWeight:500}}>{w1base}→{w} lbs</span></div>}
-                        {delta!==null&&delta!==0&&<div style={{background:delta>0?`${DS.green}12`:`${DS.red}12`,borderRadius:DS.r8,padding:"5px 10px"}}><span style={{fontSize:"11px",color:delta>0?DS.green:DS.red,fontWeight:500,fontFamily:DS.fontMono}}>{delta>0?`+${delta}`:delta}</span></div>}
                       </div>
+                      {/* Set tracker with explicit position label */}
                       <div style={{background:DS.surfaceEl,borderRadius:DS.r10,padding:"12px"}}>
-                        <div style={{display:"flex",gap:"3px",marginBottom:"10px",alignItems:"center"}}>
-                          {Array(s).fill(null).map((_,si)=>(
-                            <div key={si} style={{flex:1,height:"3px",borderRadius:"2px",background:si<cc?day.accent:DS.surfaceEl2,transition:"background 0.2s"}}/>
-                          ))}
-                          <span style={{fontSize:"12px",color:DS.labelTert,marginLeft:"8px",flexShrink:0,fontFamily:DS.fontMono}}>{cc}/{s}</span>
+                        {/* Explicit position */}
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"8px"}}>
+                          <span style={{fontSize:"13px",color:allSetsDone?DS.green:DS.labelSec,fontWeight:500}}>
+                            {allSetsDone?"All sets done":"Set "+( cc+1)+" of "+s}
+                          </span>
+                          {/* Thin bar indicators */}
+                          <div style={{display:"flex",gap:"3px",width:"60px"}}>
+                            {Array(s).fill(null).map((_,si)=>(
+                              <div key={si} style={{flex:1,height:"3px",borderRadius:"2px",background:si<cc?day.accent:DS.surfaceEl2,transition:"background 0.2s"}}/>
+                            ))}
+                          </div>
                         </div>
                         <div style={{display:"flex",gap:"8px"}}>
                           {cc<s?(
@@ -1435,125 +1443,108 @@ export default function App(){
               </div>
             )}
 
-            {/* Exercise cards */}
+            {/* Exercise cards — compact overview design */}
             {group.exercises.map((ex)=>{
-              const w=getW(ex.id,wi),prevW=getPrevW(ex.id,wi),w1base=getW1(ex.id);
+              const w=getW(ex.id,wi);
               const s=ex.sets[wi],r=ex.reps[wi],bo=ex.backoff[wi];
               const wLabel=ex.isPullup?(w===0?"BW":`+${w}`):`${w}`;
+              const wSuffix=ex.isPullup&&w===0?"":ex.isPullup?" lbs":" lbs";
               const isAdj=adj[`${tab}_w${week}_${ex.id}`]!==undefined;
               const cues=FORM_CUES[ex.id],isOpen=cueOpen[ex.id];
-              const delta=(week>1&&prevW!==null)?Math.round((w-prevW)*10)/10:null;
               const isPR=PR_EXERCISES.includes(ex.id)&&prs[ex.id]&&w>0&&w>=prs[ex.id]&&isAdj;
               const cc=getCC(ex.id,s,false);
               const boCount=bo?getCC(ex.id,bo.sets,true):0;
               const currentRating=ratings[`${tab}_w${week}_${ex.id}`];
               const allSetsDone=cc>=s;
-              const showW1Progress=week>1&&w1base>0&&w!==w1base;
 
               return(
-                <div key={ex.id} style={{background:DS.surface,borderRadius:DS.r16,overflow:"hidden",marginBottom:"10px"}}>
-                  {/* Completion bar at top */}
-                  {cc>0&&<div style={{height:"3px",background:`${day.accent}20`}}><div style={{height:"100%",width:`${(cc/s)*100}%`,background:allSetsDone?DS.green:day.accent,transition:"width 0.3s ease"}}/></div>}
+                <div key={ex.id} style={{background:DS.surface,borderRadius:DS.r12,overflow:"hidden",marginBottom:"8px"}}>
+                  {/* Progress strip — top of card */}
+                  <div style={{height:"3px",background:DS.surfaceEl}}>
+                    <div style={{height:"100%",width:`${(cc/s)*100}%`,background:allSetsDone?DS.green:day.accent,transition:"width 0.3s ease"}}/>
+                  </div>
 
-                  <div style={{padding:"14px 16px"}}>
+                  <div style={{padding:"12px 14px"}}>
                     {/* Name row */}
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"14px"}}>
-                      <div style={{flex:1}}>
-                        <div style={{display:"flex",alignItems:"center",gap:"7px",flexWrap:"wrap"}}>
-                          <span style={{fontSize:"17px",fontWeight:600,color:DS.label,letterSpacing:"-0.2px"}}>{ex.name}</span>
-                          {isPR&&<span style={{fontSize:"10px",fontWeight:700,color:"#000",background:day.accent,padding:"2px 7px",borderRadius:"10px",letterSpacing:"0.2px"}}>PR</span>}
-                        </div>
-                        {ex.note&&<div style={{fontSize:"12px",color:DS.labelTert,marginTop:"2px",lineHeight:1.4}}>{ex.note}</div>}
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:"6px",flex:1,minWidth:0}}>
+                        <span style={{fontSize:"15px",fontWeight:600,color:DS.label,letterSpacing:"-0.1px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ex.name}</span>
+                        {isPR&&<span style={{fontSize:"9px",fontWeight:700,color:"#000",background:day.accent,padding:"1px 5px",borderRadius:"8px",flexShrink:0}}>PR</span>}
+                        {ex.note&&<span style={{fontSize:"11px",color:DS.labelTert,flexShrink:0}}>·</span>}
                       </div>
-                      {cues&&<IconBtn onPress={()=>setCueOpen(p=>({...p,[ex.id]:!p[ex.id]}))} icon={Ico.info(16)} tint={isOpen?day.accent:DS.labelTert} bg={isOpen?`${day.accent}18`:DS.fillTert}/>}
+                      {cues&&<IconBtn onPress={()=>setCueOpen(p=>({...p,[ex.id]:!p[ex.id]}))} icon={Ico.info(14)} tint={isOpen?day.accent:DS.labelTert} bg={isOpen?`${day.accent}15`:DS.fillTert}/>}
                     </div>
 
-                    {/* Form cues */}
+                    {/* Cue panel */}
                     {isOpen&&cues&&(
-                      <div className="reveal" style={{marginBottom:"14px",padding:"13px 14px",background:DS.surfaceEl,borderRadius:DS.r10,borderLeft:`2.5px solid ${day.accent}`}}>
-                        <div style={{fontSize:"11px",fontWeight:700,color:day.accent,letterSpacing:"0.5px",marginBottom:"5px",textTransform:"uppercase"}}>Setup</div>
-                        <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.55,marginBottom:"10px"}}>{cues.setup}</div>
-                        <div style={{fontSize:"11px",fontWeight:700,color:day.accent,letterSpacing:"0.5px",marginBottom:"5px",textTransform:"uppercase"}}>Cues</div>
-                        <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.55,marginBottom:"12px"}}>{cues.cues}</div>
-                        <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name+' exercise form tutorial')}`} target="_blank" rel="noreferrer" style={{display:"inline-flex",alignItems:"center",gap:"5px",background:`${day.accent}14`,borderRadius:"14px",color:day.accent,fontSize:"13px",padding:"5px 12px",textDecoration:"none",fontWeight:500}}>
-                          {Ico.play(11)}<span>Watch demo</span>
+                      <div className="reveal" style={{marginBottom:"10px",padding:"10px 12px",background:DS.surfaceEl,borderRadius:DS.r8,borderLeft:`2px solid ${day.accent}`}}>
+                        <div style={{fontSize:"11px",fontWeight:700,color:day.accent,letterSpacing:"0.5px",marginBottom:"4px",textTransform:"uppercase"}}>Setup</div>
+                        <div style={{fontSize:"12px",color:DS.labelSec,lineHeight:1.5,marginBottom:"8px"}}>{cues.setup}</div>
+                        <div style={{fontSize:"11px",fontWeight:700,color:day.accent,letterSpacing:"0.5px",marginBottom:"4px",textTransform:"uppercase"}}>Cues</div>
+                        <div style={{fontSize:"12px",color:DS.labelSec,lineHeight:1.5,marginBottom:"10px"}}>{cues.cues}</div>
+                        <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name+' exercise form tutorial')}`} target="_blank" rel="noreferrer" style={{display:"inline-flex",alignItems:"center",gap:"4px",color:day.accent,fontSize:"12px",textDecoration:"none",fontWeight:500}}>
+                          {Ico.play(10)}<span>Watch demo</span>
                         </a>
                       </div>
                     )}
 
-                    {/* HERO: Weight display — this is what matters most */}
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"0",marginBottom:"12px"}}>
-                      {/* Minus */}
-                      <Btn onPress={()=>adjustW(ex.id,wi,-2.5)} style={{width:"40px",height:"40px",background:DS.fillTert,borderRadius:"50%",color:DS.labelSec,fontSize:"20px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>−</Btn>
-                      {/* Weight hero */}
-                      <div style={{flex:1,textAlign:"center",padding:"4px 8px"}}>
-                        {editingW===ex.id?(
-                          <input autoFocus type="number" inputMode="decimal" value={editVal} onChange={e=>setEditVal(e.target.value)} onBlur={()=>commitWeightEdit(ex.id)} onKeyDown={e=>{if(e.key==='Enter')commitWeightEdit(ex.id);}} style={{width:"100%",background:DS.surfaceEl,border:`1.5px solid ${day.accent}`,borderRadius:DS.r10,color:DS.label,fontFamily:DS.fontMono,fontSize:"32px",textAlign:"center",padding:"8px",fontWeight:300}}/>
-                        ):(
-                          <div onClick={()=>{setEditingW(ex.id);setEditVal(String(w));}} style={{cursor:"pointer"}}>
-                            <div>
-                              <span style={{fontFamily:DS.fontMono,fontSize:"52px",fontWeight:300,color:isAdj?day.accent:DS.label,letterSpacing:"-2px",lineHeight:1}}>{wLabel}</span>
-                              <span style={{fontSize:"16px",color:DS.labelSec,marginLeft:"4px",fontWeight:400}}>{ex.isPullup&&w>0?"lbs":!ex.isPullup?"lbs":""}</span>
-                            </div>
-                            <div style={{fontSize:"11px",color:DS.labelTert,marginTop:"1px"}}>tap to edit</div>
-                          </div>
-                        )}
+                    {/* Key info row: weight adjustment + sets × reps */}
+                    <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
+                      {/* Compact weight with inline -/+ */}
+                      <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                        <Btn onPress={()=>adjustW(ex.id,wi,-1)} style={{color:DS.labelTert,fontSize:"16px",background:"none",padding:"0 2px",lineHeight:1}}>−</Btn>
+                        <div onClick={()=>{setEditingW(ex.id);setEditVal(String(w));}} style={{cursor:"pointer"}}>
+                          {editingW===ex.id?(
+                            <input autoFocus type="number" inputMode="decimal" value={editVal} onChange={e=>setEditVal(e.target.value)} onBlur={()=>commitWeightEdit(ex.id)} onKeyDown={e=>{if(e.key==='Enter')commitWeightEdit(ex.id);}} style={{width:"72px",background:DS.surfaceEl,border:`1px solid ${day.accent}`,borderRadius:DS.r6,color:DS.label,fontFamily:DS.fontMono,fontSize:"17px",textAlign:"center",padding:"3px 6px",fontWeight:300}}/>
+                          ):(
+                            <span style={{fontFamily:DS.fontMono,fontSize:"19px",fontWeight:300,color:isAdj?day.accent:DS.label,letterSpacing:"-0.5px"}}>{wLabel}<span style={{fontSize:"12px",color:DS.labelTert,marginLeft:"2px"}}>{wSuffix}</span></span>
+                          )}
+                        </div>
+                        <Btn onPress={()=>adjustW(ex.id,wi,1)} style={{color:DS.labelTert,fontSize:"16px",background:"none",padding:"0 2px",lineHeight:1}}>+</Btn>
                       </div>
-                      {/* Plus */}
-                      <Btn onPress={()=>adjustW(ex.id,wi,2.5)} style={{width:"40px",height:"40px",background:DS.fillTert,borderRadius:"50%",color:DS.labelSec,fontSize:"20px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>+</Btn>
-                    </div>
-
-                    {/* Sets × Reps + badges row */}
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",marginBottom:"10px"}}>
-                      <div style={{background:DS.fillTert,borderRadius:DS.r8,padding:"5px 12px",display:"flex",alignItems:"center",gap:"4px"}}>
+                      {/* Divider */}
+                      <span style={{color:DS.sep,fontSize:"14px"}}>·</span>
+                      {/* Sets × reps — sets number is the most important, slightly larger */}
+                      <div style={{display:"flex",alignItems:"baseline",gap:"3px"}}>
                         <span style={{fontFamily:DS.fontMono,fontSize:"17px",fontWeight:400,color:DS.label}}>{s}</span>
                         <span style={{fontSize:"12px",color:DS.labelTert}}>sets</span>
-                        <span style={{fontSize:"14px",color:DS.sep,margin:"0 2px"}}>×</span>
-                        <span style={{fontFamily:DS.fontMono,fontSize:"17px",fontWeight:400,color:DS.label}}>{r}</span>
+                        <span style={{fontSize:"13px",color:DS.labelTert,margin:"0 2px"}}>×</span>
+                        <span style={{fontFamily:DS.fontMono,fontSize:"15px",fontWeight:400,color:DS.labelSec}}>{r}</span>
                         <span style={{fontSize:"12px",color:DS.labelTert}}>reps</span>
                       </div>
-                      {showW1Progress&&<div style={{background:`${DS.green}12`,borderRadius:DS.r8,padding:"5px 10px"}}>
-                        <span style={{fontSize:"11px",color:DS.green,fontWeight:500}}>{w1base} → {w} lbs</span>
-                      </div>}
-                      {delta!==null&&delta!==0&&<div style={{background:delta>0?`${DS.green}12`:`${DS.red}12`,borderRadius:DS.r8,padding:"5px 10px"}}>
-                        <span style={{fontSize:"11px",color:delta>0?DS.green:DS.red,fontWeight:500,fontFamily:DS.fontMono}}>{delta>0?`+${delta}`:delta}</span>
-                      </div>}
+                      {bo&&<span style={{fontSize:"11px",color:DS.labelTert}}>+back-off</span>}
                     </div>
 
-                    {bo&&<div style={{marginBottom:"10px",padding:"8px 12px",background:DS.fillTert,borderRadius:DS.r8,fontSize:"13px",color:DS.labelTert}}>Back-off: {bo.sets} × {bo.reps} @ {bo.w} lbs</div>}
-
-                    {/* Set tracker */}
-                    <div style={{background:DS.surfaceEl,borderRadius:DS.r10,padding:"12px"}}>
-                      {/* Progress dots → thin bars */}
-                      <div style={{display:"flex",gap:"3px",marginBottom:"10px",alignItems:"center"}}>
+                    {/* Progress + log action */}
+                    <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                      {/* Dot indicators — tappable to complete */}
+                      <div style={{display:"flex",gap:"4px",alignItems:"center",flex:1}}>
                         {Array(s).fill(null).map((_,si)=>(
-                          <div key={si} style={{flex:1,height:"3px",borderRadius:"2px",background:si<cc?day.accent:DS.surfaceEl2,transition:"background 0.2s"}}/>
+                          <div key={si} style={{width:"8px",height:"8px",borderRadius:"50%",background:si<cc?day.accent:DS.surfaceEl2,flexShrink:0,transition:"background 0.2s"}}/>
                         ))}
-                        <span style={{fontSize:"12px",color:DS.labelTert,marginLeft:"8px",flexShrink:0,fontFamily:DS.fontMono}}>{cc}/{s}</span>
+                        <span style={{fontSize:"11px",color:DS.labelTert,marginLeft:"4px",fontFamily:DS.fontMono}}>{cc}/{s}</span>
                       </div>
-                      <div style={{display:"flex",gap:"8px"}}>
-                        {cc<s?(
-                          <Btn onPress={()=>completeNextSet(ex.id,s,group.rest,group.label,false)} style={{flex:1,height:"44px",background:day.accent,borderRadius:DS.r10,color:"#000",fontSize:"15px",fontWeight:600,letterSpacing:"-0.1px"}}>
-                            Complete Set {cc+1}
-                          </Btn>
-                        ):(
-                          <div style={{flex:1,height:"44px",display:"flex",alignItems:"center",justifyContent:"center",background:`${DS.green}12`,borderRadius:DS.r10,gap:"6px",color:DS.green,fontSize:"14px",fontWeight:500}}>
-                            {Ico.check(14)}<span>All sets done</span>
-                          </div>
-                        )}
-                        {cc>0&&<Btn onPress={()=>undoLastSet(ex.id,s,false)} style={{height:"44px",width:"44px",background:DS.fillTert,borderRadius:DS.r10,color:DS.labelTert,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                          {Ico.undo(15)}
-                        </Btn>}
-                      </div>
+                      {/* Compact actions */}
+                      {allSetsDone?(
+                        <div style={{display:"flex",alignItems:"center",gap:"4px",color:DS.green,fontSize:"12px",fontWeight:500}}>
+                          {Ico.check(12)}<span>Done</span>
+                        </div>
+                      ):(
+                        <Btn onPress={()=>completeNextSet(ex.id,s,group.rest,group.label,false)} style={{background:DS.surfaceEl,border:`0.5px solid ${DS.sep}`,borderRadius:DS.r8,padding:"5px 12px",color:DS.labelSec,fontSize:"13px",fontWeight:500,display:"flex",alignItems:"center",gap:"4px"}}>
+                          <span style={{fontSize:"12px",color:DS.labelTert}}>Set {cc+1}</span>
+                          <span style={{color:DS.labelSec,fontWeight:600}}>+</span>
+                        </Btn>
+                      )}
+                      {cc>0&&!allSetsDone&&<Btn onPress={()=>undoLastSet(ex.id,s,false)} style={{color:DS.labelTert,fontSize:"12px",background:"none",padding:"4px"}}>undo</Btn>}
                     </div>
 
-                    {/* Quick rating */}
+                    {/* Rating — only after all sets done */}
                     {allSetsDone&&(
-                      <div className="reveal" style={{marginTop:"10px",padding:"10px 12px",background:DS.fillTert,borderRadius:DS.r10}}>
-                        <div style={{fontSize:"12px",color:DS.labelTert,marginBottom:"8px",fontWeight:500,textTransform:"uppercase",letterSpacing:"0.4px"}}>How did that feel?</div>
-                        <div style={{display:"flex",gap:"6px"}}>
+                      <div className="reveal" style={{marginTop:"10px",padding:"8px 10px",background:DS.surfaceEl,borderRadius:DS.r8}}>
+                        <div style={{fontSize:"11px",color:DS.labelTert,marginBottom:"6px",fontWeight:500,textTransform:"uppercase",letterSpacing:"0.4px"}}>How did that feel?</div>
+                        <div style={{display:"flex",gap:"5px"}}>
                           {RATING_OPTS.map(({v,label,color})=>(
-                            <Btn key={v} onPress={()=>setRating(ex.id,v)} style={{flex:1,padding:"8px 4px",background:currentRating===v?`${color}20`:DS.surfaceEl,borderRadius:DS.r8,color:currentRating===v?color:DS.labelTert,fontSize:"12px",fontWeight:currentRating===v?600:400,transition:"all 0.15s",border:currentRating===v?`0.5px solid ${color}`:"none"}}>
+                            <Btn key={v} onPress={()=>setRating(ex.id,v)} style={{flex:1,padding:"6px 4px",background:currentRating===v?`${color}18`:DS.surface,borderRadius:DS.r6,color:currentRating===v?color:DS.labelTert,fontSize:"11px",fontWeight:currentRating===v?600:400,border:currentRating===v?`0.5px solid ${color}`:"none"}}>
                               {label}
                             </Btn>
                           ))}
@@ -1561,27 +1552,21 @@ export default function App(){
                       </div>
                     )}
 
-                    {/* Back-off tracker */}
-                    {bo&&(
-                      <div style={{background:DS.fillTert,borderRadius:DS.r10,padding:"10px",marginTop:"8px"}}>
-                        <div style={{display:"flex",gap:"3px",marginBottom:"8px",alignItems:"center"}}>
+                    {/* Back-off — compact */}
+                    {bo&&allSetsDone&&(
+                      <div style={{marginTop:"8px",display:"flex",alignItems:"center",gap:"8px"}}>
+                        <div style={{display:"flex",gap:"3px",flex:1,alignItems:"center"}}>
                           {Array(bo.sets).fill(null).map((_,si)=>(
-                            <div key={si} style={{flex:1,height:"2px",borderRadius:"1px",background:si<boCount?DS.labelSec:DS.surfaceEl2,transition:"background 0.2s"}}/>
+                            <div key={si} style={{width:"6px",height:"6px",borderRadius:"50%",background:si<boCount?DS.labelSec:DS.surfaceEl2}}/>
                           ))}
-                          <span style={{fontSize:"11px",color:DS.labelTert,marginLeft:"8px",flexShrink:0,fontFamily:DS.fontMono}}>{boCount}/{bo.sets}</span>
+                          <span style={{fontSize:"10px",color:DS.labelTert,marginLeft:"4px"}}>{boCount}/{bo.sets} back-off · {bo.reps} @ {bo.w}lbs</span>
                         </div>
-                        <div style={{display:"flex",gap:"8px"}}>
-                          {boCount<bo.sets?(
-                            <Btn onPress={()=>completeNextSet(ex.id,bo.sets,group.rest,`${group.label} back-off`,true)} style={{flex:1,height:"38px",background:DS.surface,borderRadius:DS.r8,color:DS.labelSec,fontSize:"13px",fontWeight:500}}>
-                              Back-off Set {boCount+1}
-                            </Btn>
-                          ):(
-                            <div style={{flex:1,height:"38px",display:"flex",alignItems:"center",justifyContent:"center",color:`${DS.green}60`,fontSize:"13px",gap:"5px"}}>
-                              {Ico.check(12)}<span>Back-off done</span>
-                            </div>
-                          )}
-                          {boCount>0&&<Btn onPress={()=>undoLastSet(ex.id,bo.sets,true)} style={{height:"38px",width:"38px",background:DS.surface,borderRadius:DS.r8,color:DS.labelTert,display:"flex",alignItems:"center",justifyContent:"center"}}>{Ico.undo(13)}</Btn>}
-                        </div>
+                        {boCount<bo.sets?(
+                          <Btn onPress={()=>completeNextSet(ex.id,bo.sets,group.rest,`${group.label} back-off`,true)} style={{background:DS.surfaceEl,borderRadius:DS.r6,padding:"4px 10px",color:DS.labelSec,fontSize:"12px",fontWeight:500}}>+</Btn>
+                        ):(
+                          <span style={{fontSize:"11px",color:`${DS.green}80`}}>Done</span>
+                        )}
+                        {boCount>0&&<Btn onPress={()=>undoLastSet(ex.id,bo.sets,true)} style={{color:DS.labelTert,fontSize:"11px",background:"none"}}>undo</Btn>}
                       </div>
                     )}
                   </div>
