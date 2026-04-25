@@ -466,7 +466,7 @@ function OnboardingScreen({session,onComplete}){
           ))}
           <div>
             <div style={{fontSize:"13px",fontWeight:600,color:DS.labelSec,marginBottom:"8px",textTransform:"uppercase",letterSpacing:"0.2px"}}>Start Date</div>
-            <input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} style={{width:"100%",background:DS.surface,border:`0.5px solid ${DS.sep}`,borderRadius:DS.r10,color:DS.label,fontFamily:DS.font,fontSize:"17px",padding:"14px 16px"}}/>
+            <input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} style={{width:"100%",maxWidth:"100%",background:DS.surface,border:`0.5px solid ${DS.sep}`,borderRadius:DS.r10,color:DS.label,fontFamily:DS.font,fontSize:"15px",padding:"13px 14px",boxSizing:"border-box",WebkitAppearance:"none"}}/>
           </div>
         </>)}
         {step===1&&(<>
@@ -521,7 +521,7 @@ function SettingsScreen({session,userProgress,onBack,onSave}){
     setSaving(false);onSave();
   };
   const tabs=["schedule","equipment","chest","back","legs"];
-  const tabLabels={schedule:"Schedule",equipment:"Equipment",chest:"Chest",back:"Back",legs:"Legs"};
+  const tabLabels={schedule:"Schedule",equipment:"Equipment",chest:"Chest/Tri",back:"Back/Shoulder/Bi",legs:"Legs"};
   const dayBtn=(val,set,i)=><Btn key={i} onPress={()=>set(i)} style={{flex:1,padding:"7px 0",background:val===i?DS.surfaceEl2:DS.surfaceEl,borderRadius:DS.r8,color:val===i?DS.label:DS.labelTert,fontSize:"13px",fontWeight:val===i?600:400,transition:"all 0.15s"}}>{DAYS_SHORT[i]}</Btn>;
   const Row=({label,value,onToggle,last})=>(
     <Btn onPress={onToggle} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px",background:"transparent",borderBottom:last?"none":`0.5px solid ${DS.sep}`,textAlign:"left"}}>
@@ -561,7 +561,7 @@ function SettingsScreen({session,userProgress,onBack,onSave}){
           ))}
           <div style={{marginBottom:"20px"}}>
             <div style={{fontSize:"13px",fontWeight:600,color:DS.labelSec,marginBottom:"8px",textTransform:"uppercase"}}>Start Date</div>
-            <input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} style={{width:"100%",background:DS.surface,border:`0.5px solid ${DS.sep}`,borderRadius:DS.r10,color:DS.label,fontFamily:DS.font,fontSize:"17px",padding:"14px 16px"}}/>
+            <input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} style={{width:"100%",maxWidth:"100%",background:DS.surface,border:`0.5px solid ${DS.sep}`,borderRadius:DS.r10,color:DS.label,fontFamily:DS.font,fontSize:"15px",padding:"13px 14px",boxSizing:"border-box",WebkitAppearance:"none"}}/>
           </div>
           {/* Manual week control — iOS toggle row */}
           <div style={{background:DS.surface,borderRadius:DS.r16,overflow:"hidden"}}>
@@ -668,30 +668,28 @@ function SimpleStopwatch(){
   const mm=String(Math.floor(elapsed/60)).padStart(2,'0');
   const ss=String(elapsed%60).padStart(2,'0');
   return(
-    <Btn onPress={()=>{if(running){setRunning(false);setElapsed(0);}else setRunning(true);}} style={{background:running?"rgba(255,159,10,0.15)":DS.fillTert,border:running?`0.5px solid ${DS.orange}`:"none",borderRadius:"20px",padding:"5px 12px",display:"flex",alignItems:"center",gap:"6px",color:running?DS.orange:DS.labelTert,fontSize:"13px",fontFamily:DS.fontMono,fontWeight:300,letterSpacing:"0.5px",transition:"all 0.2s"}}>
-      {Ico.timer(13)}
-      <span>{running?`${mm}:${ss}`:"timer"}</span>
+    <Btn onPress={()=>{if(running){setRunning(false);setElapsed(0);}else setRunning(true);}} style={{background:running?`${DS.orange}15`:"transparent",border:running?`0.5px solid ${DS.orange}30`:"none",borderRadius:"16px",padding:"4px 8px",display:"flex",alignItems:"center",gap:"5px",color:running?DS.orange:DS.labelTert,fontSize:"12px",fontFamily:DS.fontMono,fontWeight:300,transition:"all 0.2s",minWidth:"28px",justifyContent:"center"}}>
+      {Ico.timer(12)}
+      {running&&<span>{mm}:{ss}</span>}
     </Btn>
   );
 }
 
 // ── COMPLETION OVERLAY ─────────────────────────────────────────────────
-function CompletionOverlay({day,week,message,aiSummary,completedSets,totalVolume,onClose}){
+function CompletionOverlay({day,week,message,aiSummary,completedSets,totalVolume,isW1,w1AiRes,w1Feedback,setW1Feedback,w1Loading,handleW1Feedback,applyW1Recal,feedback,setFeedback,loading,handleFeedback,aiRes,applyAi,getW,wi,onClose}){
   const nextPhase=PHASES[Math.min(week,11)];
   const nextPhaseColor=PHASE_COLORS[nextPhase]||DS.labelTert;
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",backdropFilter:"blur(40px)",WebkitBackdropFilter:"blur(40px)",zIndex:200,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 24px",fontFamily:DS.font,overflowY:"auto"}}>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",backdropFilter:"blur(40px)",WebkitBackdropFilter:"blur(40px)",zIndex:200,display:"flex",flexDirection:"column",alignItems:"center",padding:"32px 24px 40px",fontFamily:DS.font,overflowY:"auto"}}>
       <div style={{width:"100%",maxWidth:"360px",textAlign:"center"}}>
         {/* Checkmark */}
         <div style={{width:"72px",height:"72px",borderRadius:"50%",background:`${day.accent}18`,border:`2px solid ${day.accent}40`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",color:day.accent}}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
         <div style={{fontSize:"26px",fontWeight:700,color:DS.label,letterSpacing:"-0.5px",marginBottom:"4px"}}>Workout Complete</div>
         <div style={{fontSize:"12px",color:day.accent,fontWeight:600,letterSpacing:"0.5px",marginBottom:"20px",textTransform:"uppercase"}}>Week {week} · {day.label}</div>
 
-        {/* Volume stats — the reward numbers */}
+        {/* Volume stats */}
         <div style={{display:"flex",gap:"10px",marginBottom:"20px"}}>
           <div style={{flex:1,background:DS.surface,borderRadius:DS.r12,padding:"14px 10px"}}>
             <div style={{fontFamily:DS.fontMono,fontSize:"28px",fontWeight:300,color:DS.label,letterSpacing:"-1px",lineHeight:1}}>{completedSets}</div>
@@ -703,22 +701,346 @@ function CompletionOverlay({day,week,message,aiSummary,completedSets,totalVolume
           </div>}
         </div>
 
-        <div style={{fontSize:"14px",color:DS.labelSec,lineHeight:1.65,marginBottom:"16px"}}>{message}</div>
+        <div style={{fontSize:"14px",color:DS.labelSec,lineHeight:1.65,marginBottom:"16px",textAlign:"left"}}>{message}</div>
 
-        {/* AI plan update card */}
+        {/* AI plan update */}
         <div style={{background:DS.surface,borderRadius:DS.r12,padding:"14px 16px",marginBottom:"20px",textAlign:"left"}}>
           <div style={{fontSize:"10px",fontWeight:700,color:DS.labelTert,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:"6px"}}>Plan Update</div>
-          <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.6}}>
-            {aiSummary||"Reviewing your session ratings…"}
-          </div>
+          <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.6}}>{aiSummary||"Reviewing your session ratings…"}</div>
         </div>
 
-        {/* Next session teaser */}
+        {/* Session feedback — only appears post-workout */}
+        <div style={{background:DS.surface,borderRadius:DS.r12,padding:"14px 16px",marginBottom:"20px",textAlign:"left"}}>
+          <div style={{fontSize:"13px",fontWeight:600,color:DS.label,marginBottom:"10px"}}>
+            {isW1?"Week 1 Debrief":"Additional Notes"}
+          </div>
+          {isW1&&<div style={{fontSize:"12px",color:DS.labelTert,marginBottom:"10px",lineHeight:1.5}}>
+            Describe anything that felt off — too heavy, too light, form issues. We'll recalibrate weeks 2-12.
+          </div>}
+          {isW1?(<>
+            {w1AiRes?.applied?(
+              <div style={{padding:"10px 12px",background:`${DS.green}10`,borderRadius:DS.r8}}>
+                <div style={{fontSize:"11px",fontWeight:700,color:DS.green,marginBottom:"3px",textTransform:"uppercase",letterSpacing:"0.5px"}}>Plan Recalibrated</div>
+                <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.5}}>{w1AiRes.summary}. Weeks 2-12 updated.</div>
+              </div>
+            ):(
+              <>
+                <textarea value={w1Feedback} onChange={e=>setW1Feedback(e.target.value)} placeholder={'e.g. "bench was too heavy, row felt light"'} style={{width:"100%",minHeight:"70px",background:DS.surfaceEl,border:`0.5px solid ${DS.sep}`,borderRadius:DS.r8,color:DS.label,fontSize:"13px",padding:"10px 12px",resize:"vertical",lineHeight:1.5,fontFamily:DS.font}}/>
+                <div style={{marginTop:"8px"}}>
+                  <PrimaryBtn onPress={handleW1Feedback} label={w1Loading?"Analyzing…":"Recalibrate Weeks 2-12"} loading={w1Loading} disabled={!w1Feedback.trim()} color={DS.green} textColor="#000"/>
+                </div>
+                {w1AiRes&&!w1AiRes.applied&&(
+                  <div className="reveal" style={{marginTop:"10px",padding:"12px",background:DS.surfaceEl,borderRadius:DS.r8}}>
+                    <div style={{fontSize:"13px",color:DS.labelSec,marginBottom:"10px",lineHeight:1.5}}>{w1AiRes.analysis}</div>
+                    {Object.keys(w1AiRes.adjustments||{}).length>0?(<>
+                      <div style={{background:DS.surface,borderRadius:DS.r8,overflow:"hidden",marginBottom:"10px"}}>
+                        {Object.entries(w1AiRes.adjustments).map(([id,nw],idx,arr)=>{
+                          const fe=day.groups.flatMap(g=>g.exercises).find(e=>e.id===id);
+                          const cw=getW(id,wi);const diff=Math.round((nw-cw)*10)/10;
+                          return(<div key={id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderBottom:idx<arr.length-1?`0.5px solid ${DS.sep}`:"none"}}>
+                            <span style={{fontSize:"13px",color:DS.labelSec}}>{fe?.name??id}</span>
+                            <span style={{fontFamily:DS.fontMono,fontSize:"14px",color:DS.green}}>{nw}lbs <span style={{fontSize:"11px",color:diff>0?DS.green:DS.red}}>{diff>0?`+${diff}`:diff}</span></span>
+                          </div>);
+                        })}
+                      </div>
+                      <PrimaryBtn onPress={()=>applyW1Recal(w1AiRes.adjustments)} label="Apply to Weeks 2-12" color={`${DS.green}20`} textColor={DS.green}/>
+                    </>):<div style={{fontSize:"13px",color:DS.labelTert}}>Weights on target — no changes needed.</div>}
+                  </div>
+                )}
+              </>
+            )}
+          </>):(
+            <>
+              <textarea value={feedback} onChange={e=>setFeedback(e.target.value)} placeholder={'e.g. "bench felt heavy, shoulder was tight"'} style={{width:"100%",minHeight:"70px",background:DS.surfaceEl,border:`0.5px solid ${DS.sep}`,borderRadius:DS.r8,color:DS.label,fontSize:"13px",padding:"10px 12px",resize:"vertical",lineHeight:1.5,fontFamily:DS.font}}/>
+              {feedback.trim()&&<div style={{marginTop:"8px"}}>
+                <PrimaryBtn onPress={handleFeedback} label={loading?"Analyzing…":"Adjust Next Session"} loading={loading} disabled={!feedback.trim()} color={day.accent} textColor={day.accent===DS.blue?"#fff":"#000"}/>
+              </div>}
+              {aiRes&&(
+                <div className="reveal" style={{marginTop:"10px",padding:"12px",background:DS.surfaceEl,borderRadius:DS.r8}}>
+                  <div style={{fontSize:"13px",color:DS.labelSec,marginBottom:"10px",lineHeight:1.5}}>{aiRes.analysis}</div>
+                  {Object.keys(aiRes.adjustments||{}).length>0?(<>
+                    <div style={{background:DS.surface,borderRadius:DS.r8,overflow:"hidden",marginBottom:"10px"}}>
+                      {Object.entries(aiRes.adjustments).map(([id,nw],idx,arr)=>{
+                        const fe=day.groups.flatMap(g=>g.exercises).find(e=>e.id===id);
+                        const cw=getW(id,wi);const diff=Math.round((nw-cw)*10)/10;
+                        return(<div key={id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderBottom:idx<arr.length-1?`0.5px solid ${DS.sep}`:"none"}}>
+                          <span style={{fontSize:"13px",color:DS.labelSec}}>{fe?.name??id}</span>
+                          <span style={{fontFamily:DS.fontMono,fontSize:"14px",color:day.accent}}>{nw}lbs <span style={{fontSize:"11px",color:diff>0?DS.green:DS.red}}>{diff>0?`+${diff}`:diff}</span></span>
+                        </div>);
+                      })}
+                    </div>
+                    <PrimaryBtn onPress={()=>applyAi(aiRes.adjustments)} label="Apply Changes" color={`${day.accent}20`} textColor={day.accent}/>
+                  </>):<div style={{fontSize:"13px",color:DS.labelTert}}>Weights on target — no changes needed.</div>}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
         {week<12&&<div style={{fontSize:"12px",color:DS.labelTert,marginBottom:"20px"}}>
           Next up: <span style={{color:nextPhaseColor,fontWeight:500}}>Week {week+1} · {nextPhase}</span>
         </div>}
-
         <Btn onPress={onClose} style={{width:"100%",height:"50px",background:day.accent,borderRadius:DS.r12,color:day.accent===DS.blue?"#fff":"#000",fontSize:"17px",fontWeight:600}}>Keep Going</Btn>
+      </div>
+    </div>
+  );
+}
+
+// ── CORE FINISHER ──────────────────────────────────────────────────────
+// All bodyweight by default. Dumbbell upgrades only shown when user has dumbbells.
+// Day-specific rotation for variety. 4-tier progression across 12 weeks.
+// Science basis: McGill Big 3 (curl-up, bird dog, side bridge) as foundation;
+// anti-extension (dead bug, hollow body) and anti-rotation (side plank) added for balance.
+const getCoreTier=(week)=>week<=4?0:week<=8?1:week<=11?2:3; // 0=Foundation, 1=Build, 2=Peak, 3=Deload
+const CORE_PLAN={
+  chest_tri:[ // Anti-extension focus — complements pressing
+    {id:"dead_bug",name:"Dead Bug",
+      tiers:[
+        {sets:2,reps:"6/side",note:"Lower back stays flat the whole time. Move slow."},
+        {sets:3,reps:"8/side",note:"3-second extension, 1-second pause at bottom."},
+        {sets:3,reps:"10/side",note:"Add a 2-second hold at full extension."},
+        {sets:2,reps:"5/side",note:"Deload — easy pace, perfect form only."},
+      ],
+      cue:"On your back, arms to ceiling, knees at 90°. Slowly extend opposite arm and leg until nearly parallel to the floor. Keep lower back pressed into the ground. Return and switch.",
+      easier:"Keep arms vertical. Only extend the leg.",
+      harder:"Hold a light dumbbell in each hand.",
+      dumbbellHarder:true,
+    },
+    {id:"plank",name:"Plank",
+      tiers:[
+        {sets:2,reps:"25s",note:"Squeeze glutes and brace abs like you're about to take a punch."},
+        {sets:3,reps:"35s",note:"Create tension through the whole body — not just your abs."},
+        {sets:3,reps:"45s",note:"Add a small posterior pelvic tilt — tuck hips slightly under."},
+        {sets:2,reps:"20s",note:"Deload — relaxed effort, just move."},
+      ],
+      cue:"Forearms on the floor, elbows under shoulders. Body forms a straight line from heels to head. Brace the core, squeeze the glutes, and breathe steadily.",
+      easier:"Knees on the floor.",
+      harder:"Lift one foot an inch off the floor, alternate every 5 seconds.",
+      dumbbellHarder:false,
+    },
+    {id:"mcgill_curl",name:"McGill Curl-Up",
+      tiers:[
+        {sets:2,reps:"8",note:"Hands under lower back. Lift only an inch or two."},
+        {sets:3,reps:"10",note:"5-second hold at the top of each rep."},
+        {sets:3,reps:"12",note:"10-second hold. Move from the ribcage, not the neck."},
+        {sets:2,reps:"6",note:"Deload — short hold, no strain."},
+      ],
+      cue:"Lie on back, one knee bent, one leg flat. Tuck hands under your lower back to preserve its natural curve. Lift only your head and shoulders — not a full crunch. Hold briefly, lower slowly.",
+      easier:"Keep both knees bent.",
+      harder:"Extend both legs flat (removes the hip flexor support).",
+      dumbbellHarder:false,
+    },
+  ],
+  back_shoulder_bi:[ // Anti-rotation + lateral stability — complements pulling
+    {id:"bird_dog",name:"Bird Dog",
+      tiers:[
+        {sets:2,reps:"6/side",note:"No hip rotation. Move slowly — quality over speed."},
+        {sets:3,reps:"8/side",note:"Add a 2-second hold at full extension."},
+        {sets:3,reps:"10/side",note:"Draw back slowly — elbow to knee before re-extending."},
+        {sets:2,reps:"5/side",note:"Deload — no holds, gentle pace."},
+      ],
+      cue:"On all fours, wrists under shoulders, knees under hips. Extend opposite arm and leg until parallel. Hips stay level — no rotation or arch. Hold briefly, return slowly.",
+      easier:"Extend just the leg, keep both hands down.",
+      harder:"Add wrist weights or hold a light dumbbell in the extended hand.",
+      dumbbellHarder:true,
+    },
+    {id:"side_plank",name:"Side Plank",
+      tiers:[
+        {sets:2,reps:"20s/side",note:"Stack feet or stagger them. Hips up, body straight."},
+        {sets:2,reps:"30s/side",note:"Slow hip dip: lower hips toward the floor and back up, 5 reps each side."},
+        {sets:3,reps:"30s/side",note:"Hip dips every hold: 5 dips before resting."},
+        {sets:2,reps:"15s/side",note:"Deload — modified (knee down) if needed."},
+      ],
+      cue:"Lie on your side, prop on forearm. Stack your feet or stagger them. Lift hips until your body forms a straight line. Hold position — don't let the hips sag.",
+      easier:"Bottom knee on the floor.",
+      harder:"Raise the top leg 6 inches throughout the hold.",
+      dumbbellHarder:false,
+    },
+    {id:"hollow_body",name:"Hollow Body Hold",
+      tiers:[
+        {sets:2,reps:"20s",note:"Lower back stays on the floor the whole time. That's the only rule."},
+        {sets:3,reps:"25s",note:"Arms reach overhead to increase the lever — harder."},
+        {sets:3,reps:"30s",note:"Arms fully overhead, legs lower toward 30°."},
+        {sets:2,reps:"15s",note:"Deload — bent knees variation."},
+      ],
+      cue:"Lie on back, flatten lower back against the floor. Raise legs to 45° and arms overhead. Hold the 'banana' position. If lower back lifts, raise your legs higher until it stays down.",
+      easier:"Bend your knees to reduce the lever.",
+      harder:"Lower legs closer to the floor (increases lever length significantly).",
+      dumbbellHarder:false,
+    },
+  ],
+  legs:[ // Hip bridge + flexion + posterior chain — complements hinge/press work
+    {id:"glute_bridge",name:"Glute Bridge",
+      tiers:[
+        {sets:2,reps:"12",note:"Squeeze glutes hard at the top for 2 seconds. Not a hip flex — a glute contraction."},
+        {sets:3,reps:"15",note:"Slow 3-second eccentric (lowering)."},
+        {sets:3,reps:"15",note:"Single-leg version: one leg extended for the last 5 reps each side."},
+        {sets:2,reps:"10",note:"Deload — no holds, comfortable pace."},
+      ],
+      cue:"Lie on back, knees bent, feet flat. Drive hips up by squeezing glutes — not by arching your back. Hold briefly at the top, lower slowly. Feet should be close enough that you could touch your heels.",
+      easier:"Place feet wider for more stability.",
+      harder:"Hold a dumbbell across your hips.",
+      dumbbellHarder:true,
+    },
+    {id:"reverse_crunch",name:"Reverse Crunch",
+      tiers:[
+        {sets:2,reps:"10",note:"No momentum. The lower abs pull the hips off the floor."},
+        {sets:3,reps:"12",note:"2-second pause at the top before lowering."},
+        {sets:3,reps:"15",note:"Slow 3-second eccentric. Control the descent entirely."},
+        {sets:2,reps:"8",note:"Deload — partial range is fine."},
+      ],
+      cue:"Lie on back, hands by sides, knees bent at 90°. Pull knees toward your chest and lift hips slightly off the floor using your lower abs. Lower slowly. No swinging.",
+      easier:"Reduce the range — hips don't need to lift much.",
+      harder:"Extend legs to 45° (longer lever) while still controlling the movement.",
+      dumbbellHarder:false,
+    },
+    {id:"bear_hold",name:"Bear Hold",
+      tiers:[
+        {sets:2,reps:"20s",note:"Knees 1 inch off the floor. Everything else stays still."},
+        {sets:3,reps:"25s",note:"Add shoulder taps: alternate hands to opposite shoulder, 5 each side, while holding."},
+        {sets:3,reps:"30s",note:"Shoulder taps the entire hold — smooth, no rotation."},
+        {sets:2,reps:"15s",note:"Deload — no shoulder taps, just the hold."},
+      ],
+      cue:"Start on all fours. Tuck toes under, lift knees 1 inch off the ground. Hold. Back is flat, hips level. Breathe steadily. Fight every instinct to move.",
+      easier:"Keep knees on the floor — just practice the braced position.",
+      harder:"Slow shoulder taps throughout: maintain perfect stillness in the hips.",
+      dumbbellHarder:false,
+    },
+  ],
+};
+
+function CoreFinisher({accent,tab,week,equipment}){
+  const[mode,setMode]=useState("default");
+  const[expanded,setExpanded]=useState({});
+  const exercises=CORE_PLAN[tab]||CORE_PLAN.chest_tri;
+  const tier=getCoreTier(week);
+  const tierLabels=["Foundation","Build","Peak","Deload"];
+  const hasDumbbells=equipment?.dumbbells!==false; // true by default
+  const toggle=(id)=>setExpanded(p=>({...p,[id]:!p[id]}));
+  return(
+    <div style={{marginBottom:"20px"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px"}}>
+        <div>
+          <span style={{fontSize:"13px",fontWeight:600,color:DS.labelSec,textTransform:"uppercase",letterSpacing:"0.5px"}}>Core Finisher</span>
+          {mode==="custom"&&<span style={{fontSize:"11px",color:accent,marginLeft:"8px",fontWeight:500}}>{tierLabels[tier]}</span>}
+        </div>
+        <div style={{display:"flex",gap:"6px"}}>
+          <Btn onPress={()=>setMode("default")} style={{background:mode==="default"?DS.surfaceEl:"transparent",borderRadius:"10px",padding:"4px 10px",color:mode==="default"?DS.label:DS.labelTert,fontSize:"12px",fontWeight:500,border:`0.5px solid ${mode==="default"?DS.sep:"transparent"}`}}>My routine</Btn>
+          <Btn onPress={()=>setMode("custom")} style={{background:mode==="custom"?`${accent}20`:"transparent",borderRadius:"10px",padding:"4px 10px",color:mode==="custom"?accent:DS.labelTert,fontSize:"12px",fontWeight:500,border:`0.5px solid ${mode==="custom"?accent:"transparent"}`}}>Get inspiration</Btn>
+        </div>
+      </div>
+      {mode==="default"?(
+        <div style={{background:DS.surface,borderRadius:DS.r12,padding:"13px 16px",fontSize:"14px",color:DS.labelSec,lineHeight:1.5}}>
+          Do your own routine. Complete before leaving the gym.
+        </div>
+      ):(
+        <div style={{background:DS.surface,borderRadius:DS.r12,overflow:"hidden"}}>
+          {exercises.map((ex,i)=>{
+            const t=ex.tiers[tier];
+            const showDumbbellHarder=ex.dumbbellHarder&&hasDumbbells;
+            const harderText=ex.dumbbellHarder?(hasDumbbells?ex.harder:"Slow 3-second eccentric on each rep."):ex.harder;
+            return(
+              <div key={ex.id} style={{borderBottom:i<exercises.length-1?`0.5px solid ${DS.sep}`:"none"}}>
+                <Btn onPress={()=>toggle(ex.id)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px",background:"transparent",textAlign:"left",gap:"8px"}}>
+                  <div style={{flex:1}}>
+                    <div style={{display:"flex",alignItems:"baseline",gap:"8px",flexWrap:"wrap"}}>
+                      <span style={{fontSize:"14px",fontWeight:600,color:DS.label}}>{ex.name}</span>
+                      <span style={{fontSize:"11px",color:DS.labelTert,fontFamily:DS.fontMono}}>{t.sets} × {t.reps}</span>
+                    </div>
+                    <div style={{fontSize:"11px",color:accent,marginTop:"2px",lineHeight:1.4}}>{t.note}</div>
+                  </div>
+                  <span style={{fontSize:"11px",color:DS.labelTert,transform:expanded[ex.id]?"rotate(180deg)":"none",transition:"transform 0.2s",flexShrink:0}}>▼</span>
+                </Btn>
+                {expanded[ex.id]&&(
+                  <div className="reveal" style={{padding:"0 14px 12px",borderTop:`0.5px solid ${DS.sep}`}}>
+                    <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.55,marginTop:"10px",marginBottom:"10px"}}>{ex.cue}</div>
+                    <div style={{display:"flex",gap:"6px"}}>
+                      <div style={{flex:1,background:`${DS.green}10`,borderRadius:DS.r8,padding:"8px 10px"}}>
+                        <div style={{fontSize:"10px",fontWeight:600,color:DS.green,marginBottom:"3px",textTransform:"uppercase",letterSpacing:"0.4px"}}>Easier</div>
+                        <div style={{fontSize:"12px",color:DS.labelSec,lineHeight:1.4}}>{ex.easier}</div>
+                      </div>
+                      <div style={{flex:1,background:`${accent}10`,borderRadius:DS.r8,padding:"8px 10px"}}>
+                        <div style={{fontSize:"10px",fontWeight:600,color:accent,marginBottom:"3px",textTransform:"uppercase",letterSpacing:"0.4px"}}>Harder</div>
+                        <div style={{fontSize:"12px",color:DS.labelSec,lineHeight:1.4}}>{harderText}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── APP TOUR ───────────────────────────────────────────────────────────
+function AppTour({step,onNext,onSkip,accent}){
+  const steps=[
+    {
+      title:"Your workout plan",
+      body:"This is your training overview for today. Each card shows an exercise with its weight, sets, and reps. Tap the ⓘ to see form guidance.",
+      icon:(
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="4" width="18" height="3" rx="1"/><rect x="3" y="10" width="18" height="3" rx="1"/><rect x="3" y="16" width="14" height="3" rx="1"/>
+        </svg>
+      ),
+      arrow:"The exercise cards fill the page below the header.",
+    },
+    {
+      title:"Track your progress",
+      body:"Tap the chart icon in the top right to see how your weights are progressing across all 12 weeks.",
+      icon:(
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      ),
+      arrow:"↗ Chart icon — top right of the header.",
+    },
+    {
+      title:"Adjust settings",
+      body:"The gear icon opens settings where you can change your training days, starting weights, and equipment constraints.",
+      icon:(
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      ),
+      arrow:"↗ Gear icon — next to the chart icon.",
+    },
+    {
+      title:"Start your workout",
+      body:"Tap Start Workout to enter focus mode — one exercise group at a time, no distractions. Log each set with a single tap.",
+      icon:(
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      ),
+      arrow:"↓ Start Workout button — just below this tour.",
+    },
+  ];
+  const s=steps[step];
+  const isLast=step===steps.length-1;
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.82)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",zIndex:140,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 20px",fontFamily:DS.font}}>
+      <div style={{width:"100%",maxWidth:"380px"}}>
+        {/* Step indicator */}
+        <div style={{display:"flex",gap:"4px",justifyContent:"center",marginBottom:"24px"}}>
+          {steps.map((_,i)=>(
+            <div key={i} style={{width:i===step?20:6,height:"4px",borderRadius:"2px",background:i===step?accent:DS.surfaceEl2,transition:"all 0.2s"}}/>
+          ))}
+        </div>
+        {/* Card */}
+        <div style={{background:DS.surface,borderRadius:"20px",padding:"24px",marginBottom:"16px",textAlign:"center"}}>
+          <div style={{width:"56px",height:"56px",borderRadius:"16px",background:`${accent}14`,display:"flex",alignItems:"center",justifyContent:"center",color:accent,margin:"0 auto 16px"}}>
+            {s.icon}
+          </div>
+          <div style={{fontSize:"20px",fontWeight:700,color:DS.label,letterSpacing:"-0.3px",marginBottom:"8px"}}>{s.title}</div>
+          <div style={{fontSize:"14px",color:DS.labelSec,lineHeight:1.6,marginBottom:"14px"}}>{s.body}</div>
+          <div style={{fontSize:"12px",color:accent,fontWeight:500}}>{s.arrow}</div>
+        </div>
+        <Btn onPress={isLast?onSkip:onNext} style={{width:"100%",height:"50px",background:accent,borderRadius:DS.r12,color:accent===DS.blue?"#fff":"#000",fontSize:"17px",fontWeight:600,marginBottom:"10px"}}>
+          {isLast?"Let's Train":"Next"}
+        </Btn>
+        <Btn onPress={onSkip} style={{width:"100%",padding:"10px",background:"transparent",color:DS.labelTert,fontSize:"14px",textAlign:"center"}}>Skip tour</Btn>
       </div>
     </div>
   );
@@ -726,28 +1048,88 @@ function CompletionOverlay({day,week,message,aiSummary,completedSets,totalVolume
 
 // ── ORIENTATION CARD ───────────────────────────────────────────────────
 function OrientationCard({accent,onDismiss}){
+  const[step,setStep]=useState(0); // 0=how it works, 1=homescreen install
+  const[browser,setBrowser]=useState("safari");
+  // SVG icons matching design system
+  const IcoSuperset=()=>(
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/>
+      <path d="M7 11v3a4 4 0 0 0 4 4h2a4 4 0 0 0 4-4v-3"/>
+    </svg>
+  );
+  const IcoRIR=()=>(
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+      <path d="M8 12h3"/>
+    </svg>
+  );
+  const IcoInfo2=()=>(
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+    </svg>
+  );
   const items=[
-    {icon:"⚡",title:"Supersets",body:"Two exercises are grouped together. Alternate between them — do a set of the first, then immediately a set of the second. Rest after completing both. More efficient than resting between every individual set."},
-    {icon:"🎯",title:"2 Reps in Reserve",body:"Stop when you have 2 reps left before failure. If your max is 12, stop at 10. This protects your form and recovery so you perform consistently across all sets."},
-    {icon:"⏱",title:"Rest Between Sets",body:"After finishing a set you'll see the recommended rest time. Use your phone's stopwatch or the in-app timer button if you want to track it — but trust your body. Ready when your breathing normalises."},
+    {Icon:IcoSuperset,title:"Supersets",body:"Two exercises are grouped together. Alternate between them with no rest in between, then rest after completing both. This is more efficient than resting after every individual set."},
+    {Icon:IcoRIR,title:"2 Reps in Reserve",body:"Stop each set when you have 2 reps left before failure. This protects form and recovery so you perform consistently across all sets, every workout."},
+    {Icon:IcoInfo2,title:"Exercise Guides",body:"Tap the ⓘ icon on any exercise to see setup instructions, form cues, and a demo video — useful for any movement you're less familiar with."},
   ];
-  return(
+  const safariSteps=["Open this page in Safari","Tap the Share button (□↑) at the bottom of the screen","Scroll down and tap \"Add to Home Screen\"","Tap \"Add\" in the top right corner"];
+  const chromeSteps=["Open this page in Chrome","Tap the More menu (⋮) at the top right","Tap \"Add to Home Screen\"","Tap \"Add\" to confirm"];
+
+  if(step===0) return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",backdropFilter:"blur(40px)",WebkitBackdropFilter:"blur(40px)",zIndex:150,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 20px",overflowY:"auto",fontFamily:DS.font}}>
       <div style={{width:"100%",maxWidth:"400px"}}>
-        <div style={{fontSize:"13px",fontWeight:600,color:accent,letterSpacing:"0.5px",marginBottom:"10px",textTransform:"uppercase"}}>Before You Start</div>
-        <div style={{fontSize:"28px",fontWeight:700,color:DS.label,letterSpacing:"-0.5px",marginBottom:"24px"}}>How This Works</div>
-        {items.map(({icon,title,body})=>(
-          <div key={title} style={{background:DS.surface,borderRadius:DS.r12,padding:"16px",marginBottom:"10px",display:"flex",gap:"14px",alignItems:"flex-start"}}>
-            <div style={{fontSize:"26px",lineHeight:1,marginTop:"1px",flexShrink:0}}>{icon}</div>
+        <div style={{fontSize:"12px",fontWeight:600,color:accent,letterSpacing:"0.5px",marginBottom:"8px",textTransform:"uppercase"}}>Before You Start</div>
+        <div style={{fontSize:"26px",fontWeight:700,color:DS.label,letterSpacing:"-0.5px",marginBottom:"22px"}}>How This Works</div>
+        {items.map(({Icon,title,body})=>(
+          <div key={title} style={{background:DS.surface,borderRadius:DS.r12,padding:"14px 16px",marginBottom:"10px",display:"flex",gap:"14px",alignItems:"flex-start"}}>
+            <div style={{width:"36px",height:"36px",borderRadius:DS.r8,background:`${accent}14`,display:"flex",alignItems:"center",justifyContent:"center",color:accent,flexShrink:0,marginTop:"1px"}}>
+              <Icon/>
+            </div>
             <div>
-              <div style={{fontSize:"16px",fontWeight:600,color:DS.label,marginBottom:"4px"}}>{title}</div>
-              <div style={{fontSize:"14px",color:DS.labelSec,lineHeight:1.55}}>{body}</div>
+              <div style={{fontSize:"15px",fontWeight:600,color:DS.label,marginBottom:"4px"}}>{title}</div>
+              <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.55}}>{body}</div>
             </div>
           </div>
         ))}
-        <div style={{marginTop:"8px"}}>
-          <Btn onPress={onDismiss} style={{width:"100%",height:"50px",background:accent,borderRadius:DS.r12,color:"#000",fontSize:"17px",fontWeight:600}}>Let's Go</Btn>
+        <Btn onPress={()=>setStep(1)} style={{width:"100%",height:"50px",background:accent,borderRadius:DS.r12,color:accent===DS.blue?"#fff":"#000",fontSize:"17px",fontWeight:600,marginTop:"8px"}}>Next</Btn>
+      </div>
+    </div>
+  );
+
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.97)",backdropFilter:"blur(40px)",WebkitBackdropFilter:"blur(40px)",zIndex:150,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 20px",overflowY:"auto",fontFamily:DS.font}}>
+      <div style={{width:"100%",maxWidth:"400px"}}>
+        {/* iPhone icon */}
+        <div style={{width:"52px",height:"52px",borderRadius:"14px",background:`${accent}14`,display:"flex",alignItems:"center",justifyContent:"center",color:accent,margin:"0 auto 18px"}}>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/>
+          </svg>
         </div>
+        <div style={{fontSize:"12px",fontWeight:600,color:accent,letterSpacing:"0.5px",marginBottom:"6px",textTransform:"uppercase",textAlign:"center"}}>Optional</div>
+        <div style={{fontSize:"24px",fontWeight:700,color:DS.label,letterSpacing:"-0.5px",marginBottom:"8px",textAlign:"center"}}>Get the full app experience</div>
+        <div style={{fontSize:"14px",color:DS.labelSec,lineHeight:1.55,marginBottom:"20px",textAlign:"center"}}>Add this page to your iPhone homescreen so it opens like an app — no browser chrome, full screen.</div>
+        {/* Browser toggle */}
+        <div style={{display:"flex",background:DS.surfaceEl,borderRadius:DS.r10,padding:"2px",gap:"2px",marginBottom:"18px"}}>
+          {["safari","chrome"].map(b=>(
+            <Btn key={b} onPress={()=>setBrowser(b)} style={{flex:1,padding:"8px",background:browser===b?DS.surfaceEl2:"transparent",borderRadius:DS.r8,color:browser===b?DS.label:DS.labelTert,fontSize:"14px",fontWeight:browser===b?600:400,textAlign:"center",transition:"all 0.15s"}}>
+              {b==="safari"?"Safari":"Chrome"}
+            </Btn>
+          ))}
+        </div>
+        {/* Steps */}
+        <div style={{background:DS.surface,borderRadius:DS.r12,overflow:"hidden",marginBottom:"18px"}}>
+          {(browser==="safari"?safariSteps:chromeSteps).map((step,i,arr)=>(
+            <div key={i} style={{display:"flex",gap:"12px",alignItems:"flex-start",padding:"12px 16px",borderBottom:i<arr.length-1?`0.5px solid ${DS.sep}`:"none"}}>
+              <div style={{width:"20px",height:"20px",borderRadius:"50%",background:`${accent}20`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"1px"}}>
+                <span style={{fontSize:"11px",fontWeight:700,color:accent}}>{i+1}</span>
+              </div>
+              <span style={{fontSize:"14px",color:DS.labelSec,lineHeight:1.5}}>{step}</span>
+            </div>
+          ))}
+        </div>
+        <Btn onPress={onDismiss} style={{width:"100%",height:"50px",background:accent,borderRadius:DS.r12,color:accent===DS.blue?"#fff":"#000",fontSize:"17px",fontWeight:600,marginBottom:"10px"}}>Let's Go</Btn>
+        <Btn onPress={onDismiss} style={{width:"100%",padding:"10px",background:"transparent",color:DS.labelTert,fontSize:"14px",textAlign:"center"}}>Continue using browser version</Btn>
       </div>
     </div>
   );
@@ -973,6 +1355,8 @@ export default function App(){
   const[completionAiSummary,setCompletionAiSummary]=useState("");
   const[completedSessions,setCompletedSessions]=useState([]);
   const[showOrientation,setShowOrientation]=useState(false);
+  const[showTour,setShowTour]=useState(false);
+  const[tourStep,setTourStep]=useState(0);
   const[showGapPrompt,setShowGapPrompt]=useState(false);
   const[gapCalcWeek,setGapCalcWeek]=useState(1);
   const[gapLastWeek,setGapLastWeek]=useState(0);
@@ -1014,7 +1398,17 @@ export default function App(){
   };
   useEffect(()=>{if(session) loadProgress();},[session]);
 
-  const dismissOrientation=async()=>{setShowOrientation(false);if(session)await supabase.from("user_progress").upsert({user_id:session.user.id,has_seen_orientation:true,updated_at:new Date().toISOString()});};
+  const dismissOrientation=async()=>{
+    setShowOrientation(false);
+    if(session) await supabase.from("user_progress").upsert({user_id:session.user.id,has_seen_orientation:true,updated_at:new Date().toISOString()});
+    // Show tour after orientation, only if haven't seen it
+    const seen=localStorage.getItem(`tour_seen_${session?.user?.id}`);
+    if(!seen){setShowTour(true);setTourStep(0);}
+  };
+  const dismissTour=()=>{
+    setShowTour(false);
+    if(session) localStorage.setItem(`tour_seen_${session.user.id}`,"1");
+  };
   const handleGapResume=async(w)=>{setShowGapPrompt(false);setWeek(w);if(session)await supabase.from("user_progress").upsert({user_id:session.user.id,current_week:w,updated_at:new Date().toISOString()});};
 
   // Smart focus re-entry: find first incomplete group, or last group if all done
@@ -1188,8 +1582,9 @@ Return ONLY valid JSON, no markdown:
       `}</style>
 
       {showOrientation&&<OrientationCard accent={day.accent} onDismiss={dismissOrientation}/>}
+      {showTour&&<AppTour step={tourStep} accent={day.accent} onNext={()=>setTourStep(p=>p+1)} onSkip={dismissTour}/>}
       {showGapPrompt&&<GapResumePrompt calculatedWeek={gapCalcWeek} lastCompletedWeek={gapLastWeek} onResume={handleGapResume} onAdjust={()=>{setShowGapPrompt(false);setScreen("settings");}}/>}
-      {showComplete&&<CompletionOverlay day={day} week={week} message={completionMsg} aiSummary={completionAiSummary} completedSets={showComplete?.sets||0} totalVolume={showComplete?.volume||0} onClose={handleKeepGoing}/>}
+      {showComplete&&<CompletionOverlay day={day} week={week} message={completionMsg} aiSummary={completionAiSummary} completedSets={showComplete?.sets||0} totalVolume={showComplete?.volume||0} isW1={week===1} w1AiRes={w1AiRes} w1Feedback={w1Feedback} setW1Feedback={setW1Feedback} w1Loading={w1Loading} handleW1Feedback={handleW1Feedback} applyW1Recal={applyW1Recal} feedback={feedback} setFeedback={setFeedback} loading={loading} handleFeedback={handleFeedback} aiRes={aiRes} applyAi={applyAi} getW={getW} wi={wi} onClose={handleKeepGoing}/>}
 
       {/* ── NAV BAR ── */}
       <div style={{position:"sticky",top:0,zIndex:20,background:"rgba(0,0,0,0.85)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderBottom:`0.5px solid ${DS.sep}`}}>
@@ -1361,7 +1756,7 @@ Return ONLY valid JSON, no markdown:
                   </div>
                 </div>
                 <div style={{background:DS.surface,borderRadius:DS.r12,padding:"16px",marginBottom:"16px"}}>
-                  <div style={{fontSize:"14px",color:DS.labelSec,lineHeight:1.6}}>Complete your standard core routine now. This is the final step of today's workout.</div>
+                  <CoreFinisher accent={day.accent} tab={tab} week={week} equipment={userProgress?.equipment}/>
                 </div>
                 <div style={{display:"flex",gap:"8px"}}>
                   <Btn onPress={()=>setFocusGi(p=>p-1)} style={{flex:1,height:"44px",background:DS.surface,borderRadius:DS.r10,color:DS.labelSec,fontSize:"15px",fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",gap:"6px"}}>
@@ -1660,95 +2055,13 @@ Return ONLY valid JSON, no markdown:
         </>}
 
         {/* Core finisher */}
-        {!focusMode&&<div style={{padding:"13px 16px",marginBottom:"14px",background:DS.surface,borderRadius:DS.r12,fontSize:"15px",color:DS.labelSec}}>+ Core finisher — your standard routine</div>}
+        {!focusMode&&<CoreFinisher accent={day.accent} tab={tab} week={week} equipment={userProgress?.equipment}/>}
 
         {/* Finish workout (overview mode only — focus mode has its own end workout) */}
         {!focusMode&&<Btn onPress={handleFinishWorkout} disabled={processingRatings} style={{width:"100%",height:"50px",background:processingRatings?DS.surfaceEl:`${day.accent}18`,border:`0.5px solid ${processingRatings?DS.sep:day.accent}40`,borderRadius:DS.r12,color:processingRatings?DS.labelTert:day.accent,fontSize:"17px",fontWeight:600,marginBottom:"28px",letterSpacing:"-0.2px"}}>
           {processingRatings?"Processing ratings…":"Finish Workout"}
         </Btn>}
 
-        {/* Week 1 debrief */}
-        {week===1&&(
-          <div style={{marginBottom:"24px"}}>
-            <div style={{marginBottom:"10px",padding:"12px 14px",background:`${DS.green}08`,borderRadius:DS.r10,fontSize:"14px",color:DS.green,lineHeight:1.5}}>
-              Week 1 — Submit a debrief after this workout to recalibrate weeks 2-12 for your actual strength level.
-            </div>
-            <div style={{background:DS.surface,borderRadius:DS.r16,padding:"16px"}}>
-              <div style={{fontSize:"17px",fontWeight:600,color:DS.label,marginBottom:"4px"}}>Week 1 Debrief</div>
-              <div style={{fontSize:"14px",color:DS.labelSec,marginBottom:"14px",lineHeight:1.5}}>How did this workout feel? Describe any exercises that were too heavy, too light, or need form work.</div>
-              {w1AiRes?.applied?(
-                <div style={{padding:"13px 14px",background:`${DS.green}10`,borderRadius:DS.r10}}>
-                  <div style={{fontSize:"12px",fontWeight:700,color:DS.green,marginBottom:"4px",textTransform:"uppercase",letterSpacing:"0.5px"}}>Plan Recalibrated</div>
-                  <div style={{fontSize:"14px",color:DS.labelSec,lineHeight:1.5}}>{w1AiRes.summary}. Weeks 2-12 updated.</div>
-                </div>
-              ):(
-                <>
-                  <textarea value={w1Feedback} onChange={e=>setW1Feedback(e.target.value)} placeholder={'How did it feel?\n\ne.g. "bench was too heavy, row was too light"'} style={{width:"100%",minHeight:"80px",background:DS.surfaceEl,border:`0.5px solid ${DS.sep}`,borderRadius:DS.r10,color:DS.label,fontSize:"15px",padding:"12px 14px",resize:"vertical",lineHeight:1.5}}/>
-                  <div style={{marginTop:"10px"}}>
-                    <PrimaryBtn onPress={handleW1Feedback} label={w1Loading?"Analyzing…":"Recalibrate Weeks 2-12"} loading={w1Loading} disabled={!w1Feedback.trim()} color={DS.green} textColor="#000"/>
-                  </div>
-                  {w1AiRes&&!w1AiRes.applied&&(
-                    <div className="reveal" style={{marginTop:"12px",padding:"14px",background:DS.surfaceEl,borderRadius:DS.r10}}>
-                      <div style={{fontSize:"15px",color:DS.labelSec,marginBottom:"12px",lineHeight:1.5}}>{w1AiRes.analysis}</div>
-                      {Object.keys(w1AiRes.adjustments||{}).length>0?(
-                        <>
-                          <div style={{fontSize:"12px",fontWeight:700,color:DS.labelTert,marginBottom:"8px",textTransform:"uppercase",letterSpacing:"0.5px"}}>Proposed Changes</div>
-                          <div style={{background:DS.surface,borderRadius:DS.r10,overflow:"hidden",marginBottom:"12px"}}>
-                            {Object.entries(w1AiRes.adjustments).map(([id,nw],idx,arr)=>{
-                              const fe=day.groups.flatMap(g=>g.exercises).find(e=>e.id===id);
-                              const cw=getW(id,wi);const diff=Math.round((nw-cw)*10)/10;
-                              return(
-                                <div key={id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",borderBottom:idx<arr.length-1?`0.5px solid ${DS.sep}`:"none"}}>
-                                  <span style={{fontSize:"15px",color:DS.labelSec}}>{fe?.name??id}</span>
-                                  <span style={{fontFamily:DS.fontMono,fontSize:"16px",fontWeight:300,color:DS.green}}>{nw}<span style={{fontSize:"11px",color:DS.labelTert,marginLeft:"2px"}}>lbs</span> <span style={{fontSize:"12px",color:diff>0?DS.green:DS.red,marginLeft:"4px"}}>{diff>0?`+${diff}`:diff}</span></span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          <PrimaryBtn onPress={()=>applyW1Recal(w1AiRes.adjustments)} label="Apply to Weeks 2-12" color={`${DS.green}20`} textColor={DS.green}/>
-                        </>
-                      ):<div style={{fontSize:"14px",color:DS.labelTert}}>Weights on target — no changes needed.</div>}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Session feedback weeks 2+ */}
-        {week>1&&(
-          <div style={{background:DS.surface,borderRadius:DS.r16,padding:"16px",marginBottom:"24px"}}>
-            <div style={{fontSize:"17px",fontWeight:600,color:DS.label,marginBottom:"12px"}}>Session Feedback</div>
-            <textarea value={feedback} onChange={e=>setFeedback(e.target.value)} placeholder={'Additional notes?\n\ne.g. "bench felt heavy, shoulder was tight"'} style={{width:"100%",minHeight:"80px",background:DS.surfaceEl,border:`0.5px solid ${DS.sep}`,borderRadius:DS.r10,color:DS.label,fontSize:"15px",padding:"12px 14px",resize:"vertical",lineHeight:1.5}}/>
-            <div style={{marginTop:"10px"}}>
-              <PrimaryBtn onPress={handleFeedback} label={loading?"Analyzing…":"Adjust Weights"} loading={loading} disabled={!feedback.trim()} color={day.accent} textColor={day.accent===DS.orange||day.accent===DS.indigo?"#000":"#fff"}/>
-            </div>
-            {aiRes&&(
-              <div className="reveal" style={{marginTop:"12px",padding:"14px",background:DS.surfaceEl,borderRadius:DS.r10}}>
-                <div style={{fontSize:"15px",color:DS.labelSec,marginBottom:"12px",lineHeight:1.5}}>{aiRes.analysis}</div>
-                {Object.keys(aiRes.adjustments||{}).length>0?(
-                  <>
-                    <div style={{fontSize:"12px",fontWeight:700,color:DS.labelTert,marginBottom:"8px",textTransform:"uppercase",letterSpacing:"0.5px"}}>Suggested Changes</div>
-                    <div style={{background:DS.surface,borderRadius:DS.r10,overflow:"hidden",marginBottom:"12px"}}>
-                      {Object.entries(aiRes.adjustments).map(([id,nw],idx,arr)=>{
-                        const fe=day.groups.flatMap(g=>g.exercises).find(e=>e.id===id);
-                        const cw=getW(id,wi);const diff=Math.round((nw-cw)*10)/10;
-                        return(
-                          <div key={id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",borderBottom:idx<arr.length-1?`0.5px solid ${DS.sep}`:"none"}}>
-                            <span style={{fontSize:"15px",color:DS.labelSec}}>{fe?.name??id}</span>
-                            <span style={{fontFamily:DS.fontMono,fontSize:"16px",fontWeight:300,color:day.accent}}>{nw}<span style={{fontSize:"11px",color:DS.labelTert,marginLeft:"2px"}}>lbs</span> <span style={{fontSize:"12px",color:diff>0?DS.green:DS.red,marginLeft:"4px"}}>{diff>0?`+${diff}`:diff}</span></span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <PrimaryBtn onPress={()=>applyAi(aiRes.adjustments)} label="Apply All Changes" color={`${day.accent}20`} textColor={day.accent}/>
-                  </>
-                ):<div style={{fontSize:"14px",color:DS.labelTert}}>Weights on target — no changes needed.</div>}
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       </div>
