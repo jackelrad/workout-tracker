@@ -1478,17 +1478,7 @@ export default function App(){
     if(dayRatings.length===0){setProcessingRatings(false);return "No ratings collected this session.";}
     const lines=dayRatings.map(([k,r])=>{const exId=k.split('_').slice(3).join('_');const fe=day.groups.flatMap(g=>g.exercises).find(e=>e.id===exId);return `${fe?.name||exId}: ${getW(exId,wi)}lbs — ${r}`;}).join("\n");
     const ids=day.groups.flatMap(g=>g.exercises.map(e=>e.id)).join(",");
-    const prompt=`You are a strength coach. Week ${week}/12, ${PHASES[wi]} phase. The user just finished their workout and rated each exercise. Your job is two things: adjust next week's weights if needed, and write a brief 1-2 sentence human summary for the completion screen.
-
-Ratings:
-${lines}
-
-Science-based rules: Failing last 1-2 reps of last set = normal progressive overload, no weight change needed. Too easy = increase 2.5-5lbs. Too hard (failing early sets) = decrease 2.5-5lbs. Just right = no change.
-
-Return ONLY valid JSON, no markdown:
-{"summary":"1-2 sentences. Acknowledge what went well. If no changes needed, say so and briefly explain why. Warm but direct tone.","adjustments":{"EXERCISE_ID": NEW_WEIGHT_NUMBER}}
-
-Only include exercises that genuinely need changing. Valid IDs: ${ids}. Week to adjust: ${week+1}.`;
+    const prompt="You are a strength coach. Week "+week+"/12, "+PHASES[wi]+" phase. The user just finished their workout and rated each exercise. Adjust next week's weights if needed, and write a 1-2 sentence summary.\n\nRatings:\n"+lines+"\n\nRules: Failing last 1-2 reps of last set = normal progressive overload, no change. Too easy = +2.5-5lbs. Too hard (failing early sets) = -2.5-5lbs. Just right = no change.\n\nReturn ONLY valid JSON, no markdown:\n{\"summary\":\"1-2 sentences. Acknowledge what went well. If no changes, say so and explain why. Warm but direct.\",\"adjustments\":{\"EXERCISE_ID\": NEW_WEIGHT}}\n\nOnly include exercises that genuinely need changing. Valid IDs: "+ids+". Week to adjust: "+(week+1)+".";
     try{
       const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,messages:[{role:"user",content:prompt}]})});
       const data=await res.json();const text=data.content.filter(b=>b.type==="text").map(b=>b.text).join("");
@@ -1962,11 +1952,12 @@ Only include exercises that genuinely need changing. Valid IDs: ${ids}. Week to 
               const prevW=getPrevW(ex.id,wi);
               const delta=(week>1&&prevW!==null)?Math.round((w-prevW)*10)/10:null;
               const doneKey=`${tab}_w${week}_${ex.id}_s${cc-1}`;
+              const isPartial=cc>0&&!allSetsDone;
 
               return(
                 <div key={ex.id} style={{background:DS.surface,borderRadius:DS.r12,overflow:"hidden",marginBottom:"8px",display:"flex"}}>
                   {/* Left accent bar — shows completion state */}
-                  <div style={{width:"3px",flexShrink:0,background:allSetsDone?DS.green:cc>0?day.accent:DS.surfaceEl2,transition:"background 0.3s"}}/>
+                  <div style={{width:"3px",flexShrink:0,background:allSetsDone?DS.green:isPartial?day.accent:DS.surfaceEl2,transition:"background 0.3s"}}/>
                   <div style={{flex:1,padding:"11px 13px"}}>
                     {/* Single-row: name · weight · sets×reps · dots · action */}
                     <div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}}>
