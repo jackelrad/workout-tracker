@@ -2029,16 +2029,12 @@ export default function App(){
                         ))}
                       </div>
                     )}
-                    {/* Back-off inline */}
+                    {/* Back-off */}
                     {bo&&allSetsDone&&(
                       <div style={{marginTop:"6px",display:"flex",alignItems:"center",gap:"6px"}}>
-                        <div style={{display:"flex",gap:"3px"}}>
-                          {Array(bo.sets).fill(null).map((_,si)=>(<div key={si} style={{width:"5px",height:"5px",borderRadius:"50%",background:si<boCount?DS.labelSec:DS.surfaceEl2}}/>))}
-                        </div>
-                        <span style={{fontSize:"10px",color:DS.labelTert}}>{boCount}/{bo.sets} back-off · {bo.reps} @ {bo.w}lbs</span>
-                        {boCount<bo.sets?(
-                          <Btn onPress={()=>completeNextSet(ex.id,bo.sets,group.rest,`${group.label} back-off`,true)} style={{background:day.accent,borderRadius:DS.r6,width:"22px",height:"22px",display:"flex",alignItems:"center",justifyContent:"center",color:day.accent===DS.blue?"#fff":"#000",fontSize:"14px",fontWeight:600}}>+</Btn>
-                        ):<span style={{fontSize:"11px",color:`${DS.green}80`}}>{Ico.check(10)}</span>}
+                        <span style={{fontSize:"10px",color:DS.labelTert,flex:1}}>Back-off {boCount} of {bo.sets} done ({bo.reps} @ {bo.w}lbs)</span>
+                        {boCount<bo.sets&&<Btn onPress={()=>completeNextSet(ex.id,bo.sets,group.rest,"back-off",true)} style={{background:day.accent,borderRadius:DS.r6,width:"22px",height:"22px",color:day.accent===DS.blue?"#fff":"#000",fontSize:"14px",fontWeight:600}}>+</Btn>}
+                        {boCount>=bo.sets&&<span style={{color:DS.green}}>{Ico.check(12)}</span>}
                       </div>
                     )}
                   </div>
@@ -2059,7 +2055,6 @@ export default function App(){
 
       </div>
 
-      </div>
     </div>
   );
 }
