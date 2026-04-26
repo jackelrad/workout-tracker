@@ -1486,7 +1486,9 @@ ${lines}
 Science-based rules: Failing last 1-2 reps of last set = normal progressive overload, no weight change needed. Too easy = increase 2.5-5lbs. Too hard (failing early sets) = decrease 2.5-5lbs. Just right = no change.
 
 Return ONLY valid JSON, no markdown:
-{"summary":"1-2 sentences. Acknowledge what went well. If no changes needed, say so and briefly explain why (e.g. last-rep failure is expected). Warm but direct tone.","adjustments":{/* id: new_weight for week ${week+1}. Only exercises that genuinely need changing. IDs: ${ids} */}}`;
+{"summary":"1-2 sentences. Acknowledge what went well. If no changes needed, say so and briefly explain why. Warm but direct tone.","adjustments":{"EXERCISE_ID": NEW_WEIGHT_NUMBER}}
+
+Only include exercises that genuinely need changing. Valid IDs: ${ids}. Week to adjust: ${week+1}.`;
     try{
       const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,messages:[{role:"user",content:prompt}]})});
       const data=await res.json();const text=data.content.filter(b=>b.type==="text").map(b=>b.text).join("");
@@ -1529,7 +1531,7 @@ Return ONLY valid JSON, no markdown:
     const summary=day.groups.flatMap(g=>g.exercises.map(ex=>{const w=getW(ex.id,wi);return `${ex.name}: ${ex.sets[wi]}x${ex.reps[wi]} @ ${ex.isPullup?(w===0?"bodyweight":`+${w}lbs`):`${w}lbs`}`;})).join("\n");
     const ids=day.groups.flatMap(g=>g.exercises.map(e=>e.id)).join(",");
     try{
-      const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:500,messages:[{role:"user",content:`Strength coach. Week ${week}/12, ${PHASES[wi]} phase.\n\nWorkout:\n${summary}\n\nFeedback: "${feedback}"\n\nReturn ONLY valid JSON:\n{"analysis":"one sentence","adjustments":{/* id: weight. Only what needs changing. IDs: ${ids} */}}\n\nRound to 2.5lbs.`}]})});
+      const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:500,messages:[{role:"user",content:`Strength coach. Week ${week}/12, ${PHASES[wi]} phase.\n\nWorkout:\n${summary}\n\nFeedback: "${feedback}"\n\nReturn ONLY valid JSON:\n{"analysis":"one sentence","adjustments":{"EXERCISE_ID": NEW_WEIGHT_NUMBER}}\n\nOnly include exercises that need changing. Valid IDs: ${ids}. Round to 2.5lbs.`}]})});
       const data=await res.json();const text=data.content.filter(b=>b.type==="text").map(b=>b.text).join("");
       const parsed=JSON.parse(text.replace(/```json|```/g,"").trim());
       setAiRes(parsed);if(session) await supabase.from("session_feedback").insert({user_id:session.user.id,day:tab,week,feedback,ai_response:parsed});
@@ -1543,7 +1545,7 @@ Return ONLY valid JSON, no markdown:
     const summary=day.groups.flatMap(g=>g.exercises.map(ex=>{const w=getW(ex.id,0);return `${ex.name}: ${ex.sets[0]}x${ex.reps[0]} @ ${ex.isPullup?(w===0?"bodyweight":`+${w}lbs`):`${w}lbs`}`;})).join("\n");
     const ids=day.groups.flatMap(g=>g.exercises.map(e=>e.id)).join(",");
     try{
-      const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:600,messages:[{role:"user",content:`Strength coach. End of Week 1, calibration complete.\n\nWeek 1 workout:\n${summary}\n\nFeedback: "${w1Feedback}"\n\nReturn ONLY valid JSON:\n{"analysis":"one sentence","adjustments":{/* id: corrected_week1_baseline. Only exercises needing adjustment. IDs: ${ids} */}}\n\nRound to 2.5lbs.`}]})});
+      const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:600,messages:[{role:"user",content:`Strength coach. End of Week 1, calibration complete.\n\nWeek 1 workout:\n${summary}\n\nFeedback: "${w1Feedback}"\n\nReturn ONLY valid JSON:\n{"analysis":"one sentence","adjustments":{"EXERCISE_ID": CORRECTED_WEIGHT_NUMBER}}\n\nOnly include exercises needing adjustment. Valid IDs: ${ids}. Round to 2.5lbs.`}]})});
       const data=await res.json();const text=data.content.filter(b=>b.type==="text").map(b=>b.text).join("");
       setW1AiRes(JSON.parse(text.replace(/```json|```/g,"").trim()));
     }catch{setW1AiRes({analysis:"Could not process. Try again.",adjustments:{}});}
