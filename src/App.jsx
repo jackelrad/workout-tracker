@@ -76,6 +76,29 @@ const snapToIncrement=(val,exId,exSettings)=>{
   if(maxW!==null) snapped=Math.min(maxW,snapped);
   return snapped;
 };
+
+// ── PLATE MATH ─────────────────────────────────────────────────────────
+// Bar weights for plate-loaded exercises. Defaults to standard gym equipment.
+const DEFAULT_BAR_WEIGHTS={barbell:45,ez_bar:32,leg_press_sled:140};
+// Map exercises to their bar type
+const EXERCISE_BAR_TYPE={
+  bench:"barbell",row:"barbell",trap_bar:"barbell",rdl:"barbell",
+  skull:"ez_bar",
+  leg_press:"leg_press_sled",
+};
+const getBarWeight=(barType,exSettings)=>{
+  const userBars=exSettings?._bar_weights;
+  return userBars?.[barType]??DEFAULT_BAR_WEIGHTS[barType]??0;
+};
+// Compute per-side weight. Returns {perSide:number} or {barOnly:true} or null if not plate-loaded.
+const calcPlateMath=(exId,totalWeight,exSettings)=>{
+  const barType=EXERCISE_BAR_TYPE[exId];
+  if(!barType) return null;
+  const barW=getBarWeight(barType,exSettings);
+  if(totalWeight<=barW) return {barOnly:true};
+  const perSide=(totalWeight-barW)/2;
+  return {perSide};
+};
 // Single stroke, round caps, mimic SF Symbols geometry
 const Ico = {
   settings: (sz=20) => (
@@ -155,6 +178,40 @@ const MOTIVATIONAL={
   Deload:["Recovery is where growth happens.","Trust the process. Rest is part of the plan.","Earn your recovery. You've put in the work.","Your muscles grow when you rest, not when you lift."]
 };
 const COMPLETE_MSGS=["Consistency over intensity. You showed up today — that's what separates people who get results from people who don't.","Every session is a vote for the person you're becoming. You just cast yours.","The hard days are the most important ones. You just had one of them.","Most people skipped today. You didn't. That's the whole difference.","You won't remember how you felt walking in. You'll remember how you felt walking out.","Another session in the books. The compound interest on consistency is coming.","Strength is built one session at a time. This was one of them.","Showing up is the hardest part. You keep doing the hardest part."];
+
+// ── EXERCISE ABBREVIATIONS ─────────────────────────────────────────────
+// Used in "Up next" indicator. Try full names first; fall back to abbrevs if too long.
+const EX_ABBREV={
+  "Flat Barbell Bench Press":"BB Bench",
+  "Cable Tricep Pushdown":"Tri Pushdown",
+  "Incline DB Press":"Incline DB Press",
+  "EZ Bar Skull Crushers":"Skull Crushers",
+  "Cable Fly":"Cable Fly",
+  "Single-Arm Cable Kickback":"1-Arm Kickback",
+  "Pull-ups":"Pull-ups",
+  "Barbell Row":"BB Row",
+  "Face Pull":"Face Pull",
+  "DB Shoulder Press":"DB Shoulder Press",
+  "Alternating Incline Curl":"Incline DB Curl",
+  "Cable Lateral Raise":"Cable Lat Raise",
+  "Lat Pulldown":"Lat Pulldown",
+  "Trap Bar Deadlift":"Trap Bar DL",
+  "Leg Press (total load)":"Leg Press",
+  "Romanian Deadlift":"RDL",
+  "Standing Calf Raise":"Calf Raise",
+  "Leg Extension":"Leg Ext",
+  "Lying Leg Curl":"Leg Curl",
+};
+// Build "Up next: X, Y" string. Tries full names; uses abbrevs if too long; never truncates with ellipsis.
+const buildUpNext=(names,maxChars=42)=>{
+  if(!names||names.length===0) return "";
+  const full=names.join(", ");
+  const prefix="Up next: ";
+  if((prefix+full).length<=maxChars) return prefix+full;
+  // Try abbreviating
+  const abbrev=names.map(n=>EX_ABBREV[n]||n).join(", ");
+  return prefix+abbrev;
+};
 
 const FORM_CUES={
   bench:{setup:"Grip slightly wider than shoulder-width. Slight natural arch. Butt stays on bench. Feet flat — drive through heels.",cues:"Bar path: lower to mid-chest at a slight diagonal. Elbows 45-75° from torso — not flared. Touch chest lightly, brief pause, press. Think: leg drive into the floor as you press."},
@@ -297,12 +354,19 @@ const BENCH_FIELDS={
 const defaultBenchmarks=()=>{const b={};Object.values(BENCH_FIELDS).flat().forEach(f=>b[f.id]=f.default);return b;};
 
 const PROG={compound_major:[0,5,10,0,20,25,30,35,40,45,50],compound_minor:[0,5,5,0,15,17.5,17.5,22.5,22.5,27.5,27.5],isolation:[0,2.5,5,2.5,10,12.5,15,17.5,17.5,20,22.5],cable_light:[0,2.5,5,2.5,7.5,10,12.5,15,15,17.5,20]};
-const gW=(w1,t)=>[...PROG[t].map(d=>r25(w1+d)),r25(w1*.85)];
+// Snap progression weights to user's equipment increments (or default to 2.5lb)
+const gW=(w1,t,exId,exSettings)=>{
+  const inc=getExSetting(exId,"increment",exSettings);
+  const minW=getExSetting(exId,"minW",exSettings);
+  const maxW=exSettings?.[exId]?.maxW??DEFAULT_EX_SETTINGS[exId]?.maxW;
+  const snap=v=>{let s=Math.round(v/inc)*inc;if(minW!==null)s=Math.max(minW,s);if(maxW!==null)s=Math.min(maxW,s);return s;};
+  return[...PROG[t].map(d=>snap(w1+d)),snap(w1*.85)];
+};
 const gPU=r=>{const a=r>=12?15:r>=8?10:r>=5?5:0;return[0,0,0,0,a,a+5,a+10,a+10,a+15,a+20,a+25,0];};
-function buildWeights(b,eq){
+function buildWeights(b,eq,exSettings){
   if(!b||!Object.keys(b).length) return null;
   const hp=eq?.pullup_bar!==false;
-  return{bench:gW(b.bench||135,'compound_major'),pushdown:gW(b.pushdown||32.5,'isolation'),incline:gW(b.incline||45,'compound_minor'),skull:gW(b.skull||50,'isolation'),fly:gW(b.fly||17.5,'cable_light'),kickback:gW(b.kickback||15,'cable_light'),pullup:hp?gPU(b.pullup_reps||5):Array(12).fill(0),row:gW(b.row||65,'compound_major'),facepull:gW(b.facepull||40,'isolation'),db_shoulder:gW(b.db_shoulder||50,'compound_minor'),incline_curl:gW(b.incline_curl||25,'isolation'),lat_raise:gW(b.lat_raise||10,'cable_light'),lat_pulldown:gW(b.lat_pulldown||100,'compound_minor'),trap_bar:gW(b.trap_bar||185,'compound_major'),leg_press:gW(b.leg_press||300,'compound_major'),rdl:gW(b.rdl||110,'compound_minor'),calf:gW(b.calf||90,'isolation'),leg_ext:gW(b.leg_ext||110,'isolation'),leg_curl:gW(b.leg_curl||70,'isolation')};
+  return{bench:gW(b.bench||135,'compound_major','bench',exSettings),pushdown:gW(b.pushdown||32.5,'isolation','pushdown',exSettings),incline:gW(b.incline||45,'compound_minor','incline',exSettings),skull:gW(b.skull||50,'isolation','skull',exSettings),fly:gW(b.fly||17.5,'cable_light','fly',exSettings),kickback:gW(b.kickback||15,'cable_light','kickback',exSettings),pullup:hp?gPU(b.pullup_reps||5):Array(12).fill(0),row:gW(b.row||65,'compound_major','row',exSettings),facepull:gW(b.facepull||40,'isolation','facepull',exSettings),db_shoulder:gW(b.db_shoulder||50,'compound_minor','db_shoulder',exSettings),incline_curl:gW(b.incline_curl||25,'isolation','incline_curl',exSettings),lat_raise:gW(b.lat_raise||10,'cable_light','lat_raise',exSettings),lat_pulldown:gW(b.lat_pulldown||100,'compound_minor','lat_pulldown',exSettings),trap_bar:gW(b.trap_bar||185,'compound_major','trap_bar',exSettings),leg_press:gW(b.leg_press||300,'compound_major','leg_press',exSettings),rdl:gW(b.rdl||110,'compound_minor','rdl',exSettings),calf:gW(b.calf||90,'isolation','calf',exSettings),leg_ext:gW(b.leg_ext||110,'isolation','leg_ext',exSettings),leg_curl:gW(b.leg_curl||70,'isolation','leg_curl',exSettings)};
 }
 async function saveGeneratedWeights(userId,weights){
   if(!weights) return;
@@ -343,6 +407,65 @@ function IconBtn({onPress,icon,tint,bg}){
     <Btn onPress={onPress} style={{width:"34px",height:"34px",borderRadius:"50%",background:bg||DS.fillTert,color:tint||DS.labelSec,display:"flex",alignItems:"center",justifyContent:"center"}}>
       {icon}
     </Btn>
+  );
+}
+
+// HoldBtn — short tap calls onTap; long-press (600ms) calls onHold. Shows progress fill while holding.
+function HoldBtn({onTap,onHold,style,children,holdMs=600,fillColor,disabled}){
+  const[holding,setHolding]=useState(false);
+  const[progress,setProgress]=useState(0);
+  const timerRef=useRef(null);
+  const rafRef=useRef(null);
+  const startTime=useRef(0);
+  const fired=useRef(false);
+  const start=()=>{
+    if(disabled)return;
+    fired.current=false;
+    startTime.current=Date.now();
+    setHolding(true);setProgress(0);
+    const tick=()=>{
+      const e=Date.now()-startTime.current;
+      const p=Math.min(1,e/holdMs);
+      setProgress(p);
+      if(p<1)rafRef.current=requestAnimationFrame(tick);
+    };
+    rafRef.current=requestAnimationFrame(tick);
+    timerRef.current=setTimeout(()=>{
+      fired.current=true;
+      setHolding(false);setProgress(0);
+      if(navigator.vibrate)try{navigator.vibrate(30);}catch(e){}
+      onHold&&onHold();
+    },holdMs);
+  };
+  const cancel=()=>{
+    if(timerRef.current){clearTimeout(timerRef.current);timerRef.current=null;}
+    if(rafRef.current){cancelAnimationFrame(rafRef.current);rafRef.current=null;}
+    if(holding&&!fired.current){
+      // Released early - treat as tap
+      onTap&&onTap();
+    }
+    setHolding(false);setProgress(0);
+  };
+  // Cleanup on unmount
+  useEffect(()=>()=>{
+    if(timerRef.current)clearTimeout(timerRef.current);
+    if(rafRef.current)cancelAnimationFrame(rafRef.current);
+  },[]);
+  return(
+    <button
+      disabled={disabled}
+      onMouseDown={start}
+      onMouseUp={cancel}
+      onMouseLeave={()=>{if(holding)cancel();}}
+      onTouchStart={e=>{e.preventDefault();start();}}
+      onTouchEnd={e=>{e.preventDefault();cancel();}}
+      onTouchCancel={cancel}
+      style={{border:"none",fontFamily:DS.font,position:"relative",overflow:"hidden",...style}}
+    >
+      {/* Progress overlay — fills left to right while holding */}
+      {holding&&<div style={{position:"absolute",top:0,left:0,bottom:0,width:`${progress*100}%`,background:fillColor||"rgba(255,255,255,0.25)",pointerEvents:"none",transition:"none"}}/>}
+      <div style={{position:"relative",zIndex:1,width:"100%",height:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"2px"}}>{children}</div>
+    </button>
   );
 }
 
@@ -432,7 +555,7 @@ function OnboardingScreen({session,onComplete}){
   const[saving,setSaving]=useState(false);
   const handleFinish=async()=>{
     setSaving(true);
-    const weights=buildWeights(benchmarks,equipment);
+    const weights=buildWeights(benchmarks,equipment,{});
     await supabase.from("user_progress").upsert({user_id:session.user.id,benchmarks,equipment,setup_complete:true,start_date:startDate,day1_dow:d1,day2_dow:d2,day3_dow:d3,current_week:1,current_day:'chest_tri',has_seen_orientation:false,last_completed_week:0,manual_week_lock:false,completed_sessions:[],updated_at:new Date().toISOString()});
     await saveGeneratedWeights(session.user.id,weights);
     setSaving(false);onComplete();
@@ -515,7 +638,7 @@ function SettingsScreen({session,userProgress,onBack,onSave}){
   const setExSetting=(exId,key,val)=>setLocalExSettings(p=>({...p,[exId]:{...p[exId],[key]:val}}));
   const handleSave=async()=>{
     setSaving(true);
-    const weights=buildWeights(benchmarks,equipment);
+    const weights=buildWeights(benchmarks,equipment,localExSettings);
     await supabase.from("user_progress").upsert({user_id:session.user.id,benchmarks,equipment,start_date:startDate,day1_dow:d1,day2_dow:d2,day3_dow:d3,manual_week_lock:manualLock,exercise_settings:localExSettings,updated_at:new Date().toISOString()});
     await saveGeneratedWeights(session.user.id,weights);
     setSaving(false);onSave();
@@ -586,10 +709,37 @@ function SettingsScreen({session,userProgress,onBack,onSave}){
             <div style={{background:`${DS.blue}12`,borderRadius:DS.r10,padding:"12px 14px",marginBottom:"14px",fontSize:"14px",color:DS.labelSec,lineHeight:1.6}}>
               Check everything available at your gym. The workout plan will only use exercises that match your equipment — anything unchecked will be substituted automatically.
             </div>
-            <div style={{background:DS.surface,borderRadius:DS.r16,overflow:"hidden"}}>
+            <div style={{background:DS.surface,borderRadius:DS.r16,overflow:"hidden",marginBottom:"20px"}}>
               {EQUIPMENT_LIST.map((eq,i)=>(
                 <Row key={eq.id} label={eq.label} value={equipment[eq.id]} onToggle={()=>setEquipment(p=>({...p,[eq.id]:!p[eq.id]}))} last={i===EQUIPMENT_LIST.length-1}/>
               ))}
+            </div>
+            {/* Bar weights — used for plate math display */}
+            <div style={{fontSize:"11px",fontWeight:600,color:DS.labelTert,marginBottom:"8px",letterSpacing:"0.5px",textTransform:"uppercase"}}>Bar weights</div>
+            <div style={{fontSize:"13px",color:DS.labelTert,marginBottom:"12px",lineHeight:1.5}}>
+              Used to calculate per-side plate weight in workout mode. Adjust if your gym uses non-standard equipment.
+            </div>
+            <div style={{background:DS.surface,borderRadius:DS.r16,padding:"4px 16px"}}>
+              {[
+                {key:"barbell",label:"Barbell",def:DEFAULT_BAR_WEIGHTS.barbell},
+                {key:"ez_bar",label:"EZ bar",def:DEFAULT_BAR_WEIGHTS.ez_bar},
+                {key:"leg_press_sled",label:"Leg press sled",def:DEFAULT_BAR_WEIGHTS.leg_press_sled},
+              ].map((bw,bi,arr)=>{
+                const cur=localExSettings?._bar_weights?.[bw.key]??bw.def;
+                return(
+                  <div key={bw.key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",borderBottom:bi<arr.length-1?`0.5px solid ${DS.sep}`:"none"}}>
+                    <span style={{fontSize:"15px",color:DS.label}}>{bw.label}</span>
+                    <input
+                      type="number" inputMode="decimal" value={cur}
+                      onChange={e=>{
+                        const v=e.target.value===""?bw.def:parseFloat(e.target.value);
+                        setLocalExSettings(p=>({...p,_bar_weights:{...(p?._bar_weights||{}),[bw.key]:v}}));
+                      }}
+                      style={{width:"80px",background:DS.surfaceEl,border:`0.5px solid ${DS.sep}`,borderRadius:DS.r8,color:DS.label,fontFamily:DS.fontMono,fontSize:"15px",fontWeight:300,padding:"6px 10px",textAlign:"center"}}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -1365,6 +1515,14 @@ export default function App(){
   const[exSettings,setExSettings]=useState({});
   const[focusMode,setFocusMode]=useState(false);
   const[focusGi,setFocusGi]=useState(-1);
+  const[holdHintSeen,setHoldHintSeen]=useState(true); // avoid flash before localStorage check
+  useEffect(()=>{
+    if(session?.user?.id)setHoldHintSeen(!!localStorage.getItem(`hold_hint_${session.user.id}`));
+  },[session?.user?.id]);
+  const dismissHoldHint=()=>{
+    if(session?.user?.id)localStorage.setItem(`hold_hint_${session.user.id}`,"1");
+    setHoldHintSeen(true);
+  };
 
   useEffect(()=>{
     supabase.auth.getSession().then(({data:{session}})=>{setSession(session);setAuthReady(true);});
@@ -1413,19 +1571,19 @@ export default function App(){
   };
   const handleGapResume=async(w)=>{setShowGapPrompt(false);setWeek(w);if(session)await supabase.from("user_progress").upsert({user_id:session.user.id,current_week:w,updated_at:new Date().toISOString()});};
 
-  // Smart focus re-entry: find first incomplete group, or last group if all done
+  // Smart focus re-entry: -1 = mobility (fresh session), gi = first incomplete group, else last group
   const getResumeGi=(dayData,wi)=>{
+    // Check if any group has any started sets at all
+    const anyProgress=dayData.groups.some(g=>g.exercises.some(ex=>getCC(ex.id,ex.sets[wi],false)>0));
+    if(!anyProgress) return -1; // Fresh session - start at mobility
+    // Find first group that's not fully completed
     for(let gi=0;gi<dayData.groups.length;gi++){
       const grp=dayData.groups[gi];
-      const anyStarted=grp.exercises.some(ex=>getCC(ex.id,ex.sets[wi],false)>0);
-      const allDone2=grp.exercises.every(ex=>getCC(ex.id,ex.sets[wi],false)>=ex.sets[wi]);
-      if(anyStarted&&!allDone2) return gi;
-      if(anyStarted) continue; // done, check next
-      if(!anyStarted&&gi>0) return gi; // first untouched after some progress
+      const allDoneInGroup=grp.exercises.every(ex=>getCC(ex.id,ex.sets[wi],false)>=ex.sets[wi]);
+      if(!allDoneInGroup) return gi;
     }
-    // check if any group has started at all
-    const anyProgress=dayData.groups.some(g=>g.exercises.some(ex=>getCC(ex.id,ex.sets[wi],false)>0));
-    return anyProgress?dayData.groups.length-1:-1; // -1 = start from mobility
+    // Everything complete - go to core
+    return dayData.groups.length;
   };
 
   const getW=(exId,wi)=>{const k=`${tab}_w${week}_${exId}`;if(adj[k]!==undefined)return adj[k];const ex=PLAN[tab].groups.flatMap(g=>g.exercises).find(e=>e.id===exId);return ex?ex.weights[wi]:0;};
@@ -1442,6 +1600,96 @@ export default function App(){
   const commitWeightEdit=(exId)=>{const v=parseFloat(editVal);if(!isNaN(v)&&v>=0){const next=snapToIncrement(v,exId,exSettings);const k=`${tab}_w${week}_${exId}`;setAdj(p=>({...p,[k]:next}));if(PR_EXERCISES.includes(exId)&&next>(prs[exId]||0))setPRs(p=>({...p,[exId]:next}));saveWeight(tab,week,exId,next);}setEditingW(null);};
   const saveSetToDb=async(day,wk,setKey,completed)=>{if(!session)return;await supabase.from("completed_sets").upsert({user_id:session.user.id,day,week:wk,set_key:setKey,completed,updated_at:new Date().toISOString()},{onConflict:"user_id,day,week,set_key"});};
   const getCC=(exId,totalSets,isBO=false)=>{const pre=isBO?`${tab}_w${week}_${exId}_bo`:`${tab}_w${week}_${exId}_s`;let c=0;for(let i=0;i<totalSets;i++){if(done[`${pre}${i}`])c++;}return c;};
+
+  // Toast (used to confirm propagation after first set is logged at adjusted weight)
+  const[toast,setToast]=useState(null);
+  const showToast=(msg)=>{setToast(msg);setTimeout(()=>setToast(null),3500);};
+
+  // Track which exercise/week pairs have been propagated already this session (prevent re-firing on every set)
+  const propagatedRef=useRef(new Set());
+  // Get the originally-planned weight for this week (what would be there with no manual adjustments)
+  const getPlannedW=(exId,wi)=>{
+    const ex=PLAN[tab].groups.flatMap(g=>g.exercises).find(e=>e.id===exId);
+    return ex?ex.weights[wi]:0;
+  };
+  // Adaptive weight propagation
+  // Called when user logs a set at a weight different from the planned/expected weight for that week.
+  // Adjustments propagate forward: small change = shift remaining weeks; bigger change = adjust progression rate.
+  const propagateWeightChange=async(exId)=>{
+    const propKey=`${tab}_w${week}_${exId}`;
+    if(propagatedRef.current.has(propKey))return; // Already propagated for this exercise this week
+    const wi=week-1;
+    const usedW=getW(exId,wi);
+    const plannedW=getPlannedW(exId,wi);
+    const diff=usedW-plannedW;
+    if(diff===0)return; // No change, no propagation
+    const inc=getExSetting(exId,"increment",exSettings);
+    const incsAway=Math.abs(diff)/inc;
+    const isDecrease=diff<0;
+    const isIncrease=diff>0;
+    propagatedRef.current.add(propKey);
+    // Compute new weights for weeks (week+1) through 12
+    const ex=PLAN[tab].groups.flatMap(g=>g.exercises).find(e=>e.id===exId);
+    if(!ex)return;
+    const updates={};
+    const rows=[];
+    let label="";
+    if(isDecrease){
+      if(incsAway<=1){
+        // Small decrease: shift remaining weeks down by same amount
+        for(let w=week+1;w<=12;w++){
+          const k=`${tab}_w${w}_${exId}`;
+          const baseW=adj[k]??ex.weights[w-1];
+          const nw=Math.max(0,snapToIncrement(baseW+diff,exId,exSettings));
+          updates[k]=nw;
+          rows.push({user_id:session?.user.id,day:tab,week:w,exercise_id:exId,weight:nw,updated_at:new Date().toISOString()});
+        }
+        label="Adjusted future weeks down";
+      }else if(incsAway<=3){
+        // Medium decrease: slow progression rate by 35% from this point forward
+        // New baseline: usedW. Apply progression deltas at 65% rate.
+        const slowdown=0.65;
+        for(let w=week+1;w<=12;w++){
+          const planned=ex.weights[w-1];
+          const plannedDelta=planned-plannedW; // how much the original plan progressed from current week
+          const newDelta=plannedDelta*slowdown;
+          const nw=Math.max(0,snapToIncrement(usedW+newDelta,exId,exSettings));
+          const k=`${tab}_w${w}_${exId}`;
+          updates[k]=nw;
+          rows.push({user_id:session?.user.id,day:tab,week:w,exercise_id:exId,weight:nw,updated_at:new Date().toISOString()});
+        }
+        label="Slowed progression for remaining weeks";
+      }else{
+        // Large decrease: recompute as new baseline
+        for(let w=week+1;w<=12;w++){
+          const planned=ex.weights[w-1];
+          const plannedDelta=planned-plannedW;
+          const nw=Math.max(0,snapToIncrement(usedW+plannedDelta,exId,exSettings));
+          const k=`${tab}_w${w}_${exId}`;
+          updates[k]=nw;
+          rows.push({user_id:session?.user.id,day:tab,week:w,exercise_id:exId,weight:nw,updated_at:new Date().toISOString()});
+        }
+        label="Reset future weeks to new baseline";
+      }
+    }else if(isIncrease){
+      // Increase: shift remaining weeks up, but cap propagation for large jumps
+      // Cap: at most 2 increments of bonus carry forward
+      const carry=Math.min(diff,inc*2);
+      for(let w=week+1;w<=12;w++){
+        const k=`${tab}_w${w}_${exId}`;
+        const baseW=adj[k]??ex.weights[w-1];
+        const nw=Math.max(0,snapToIncrement(baseW+carry,exId,exSettings));
+        updates[k]=nw;
+        rows.push({user_id:session?.user.id,day:tab,week:w,exercise_id:exId,weight:nw,updated_at:new Date().toISOString()});
+      }
+      label=incsAway<=2?"Bumped future weeks up":"Applied partial bump to future weeks";
+    }
+    setAdj(p=>({...p,...updates}));
+    if(session&&rows.length){
+      for(let i=0;i<rows.length;i+=50)await supabase.from("weight_adjustments").upsert(rows.slice(i,i+50),{onConflict:"user_id,day,week,exercise_id"});
+    }
+    showToast(`${ex.name}: ${label}`);
+  };
   const completeNextSet=(exId,totalSets,groupRest,groupLabel,isBO=false)=>{
     const pre=isBO?`${tab}_w${week}_${exId}_bo`:`${tab}_w${week}_${exId}_s`;const dbPre=isBO?`${exId}_bo`:`${exId}_s`;
     let ni=0;while(ni<totalSets&&done[`${pre}${ni}`])ni++;if(ni>=totalSets)return;
@@ -1449,6 +1697,24 @@ export default function App(){
     setLastCompletedKey(`${pre}${ni}`);
     setTimeout(()=>setLastCompletedKey(null),400);
     saveSetToDb(tab,week,`${dbPre}${ni}`,true);
+    // Propagate weight change forward when user commits to a different weight (logs first set)
+    if(!isBO&&ni===0)propagateWeightChange(exId);
+  };
+  // Mark all remaining sets as complete (triggered by long-press)
+  const completeAllSets=(exId,totalSets,isBO=false)=>{
+    const pre=isBO?`${tab}_w${week}_${exId}_bo`:`${tab}_w${week}_${exId}_s`;
+    const dbPre=isBO?`${exId}_bo`:`${exId}_s`;
+    const wasFresh=!done[`${pre}0`];
+    setDone(p=>{
+      const n={...p};
+      for(let i=0;i<totalSets;i++)n[`${pre}${i}`]=true;
+      saveToLocal(session?.user?.id,n);
+      return n;
+    });
+    // Save all sets to DB
+    for(let i=0;i<totalSets;i++)saveSetToDb(tab,week,`${dbPre}${i}`,true);
+    // Propagate if this was the first time logging this exercise
+    if(!isBO&&wasFresh)propagateWeightChange(exId);
   };
   const undoLastSet=(exId,totalSets,isBO=false)=>{
     const pre=isBO?`${tab}_w${week}_${exId}_bo`:`${tab}_w${week}_${exId}_s`;const dbPre=isBO?`${exId}_bo`:`${exId}_s`;
@@ -1457,8 +1723,8 @@ export default function App(){
     saveSetToDb(tab,week,`${dbPre}${li}`,false);
   };
   const setRating=(exId,r)=>{setRatings(p=>({...p,[`${tab}_w${week}_${exId}`]:r}));if(session)supabase.from("exercise_ratings").upsert({user_id:session.user.id,day:tab,week,exercise_id:exId,rating:r},{onConflict:"user_id,day,week,exercise_id"});};
-  const changeWeek=(w)=>{const c=Math.max(1,Math.min(12,w));setWeek(c);setAiRes(null);setFeedback("");setW1Feedback("");setW1AiRes(null);setMobOpen(true);setEditingW(null);if(session)supabase.from("user_progress").upsert({user_id:session.user.id,current_week:c,updated_at:new Date().toISOString()});};
-  const changeTab=(t)=>{setTab(t);setAiRes(null);setFeedback("");setW1Feedback("");setW1AiRes(null);setMobOpen(true);setEditingW(null);if(session)supabase.from("user_progress").upsert({user_id:session.user.id,current_day:t,updated_at:new Date().toISOString()});};
+  const changeWeek=(w)=>{const c=Math.max(1,Math.min(12,w));setWeek(c);setAiRes(null);setFeedback("");setW1Feedback("");setW1AiRes(null);setMobOpen(true);setEditingW(null);propagatedRef.current=new Set();if(session)supabase.from("user_progress").upsert({user_id:session.user.id,current_week:c,updated_at:new Date().toISOString()});};
+  const changeTab=(t)=>{setTab(t);setAiRes(null);setFeedback("");setW1Feedback("");setW1AiRes(null);setMobOpen(true);setEditingW(null);propagatedRef.current=new Set();if(session)supabase.from("user_progress").upsert({user_id:session.user.id,current_day:t,updated_at:new Date().toISOString()});};
   const applyAi=async(aiAdj)=>{const n={...adj};const rows=[];for(const[id,w] of Object.entries(aiAdj)){n[`${tab}_w${week}_${id}`]=w;rows.push({user_id:session?.user.id,day:tab,week,exercise_id:id,weight:w,updated_at:new Date().toISOString()});}setAdj(n);setAiRes(null);setFeedback("");if(session&&rows.length)await supabase.from("weight_adjustments").upsert(rows,{onConflict:"user_id,day,week,exercise_id"});};
   const applyW1Recal=async(adjustments)=>{
     const n={...adj};const rows=[];const changes=[];
@@ -1476,9 +1742,18 @@ export default function App(){
     setProcessingRatings(true);
     const day=PLAN[tab];const wi=week-1;
     if(dayRatings.length===0){setProcessingRatings(false);return "No ratings collected this session.";}
-    const lines=dayRatings.map(([k,r])=>{const exId=k.split('_').slice(3).join('_');const fe=day.groups.flatMap(g=>g.exercises).find(e=>e.id===exId);return `${fe?.name||exId}: ${getW(exId,wi)}lbs — ${r}`;}).join("\n");
+    // Build rating lines with awareness of whether user manually adjusted
+    const lines=dayRatings.map(([k,r])=>{
+      const exId=k.split('_').slice(3).join('_');
+      const fe=day.groups.flatMap(g=>g.exercises).find(e=>e.id===exId);
+      const usedW=getW(exId,wi);
+      const plannedW=getPlannedW(exId,wi);
+      const wasAdjusted=usedW!==plannedW;
+      const adjNote=wasAdjusted?` (user adjusted from planned ${plannedW}lbs)`:"";
+      return `${fe?.name||exId}: used ${usedW}lbs${adjNote} — rated "${r}"`;
+    }).join("\n");
     const ids=day.groups.flatMap(g=>g.exercises.map(e=>e.id)).join(",");
-    const prompt="You are a strength coach. Week "+week+"/12, "+PHASES[wi]+" phase. The user just finished their workout and rated each exercise. Adjust next week's weights if needed, and write a 1-2 sentence summary.\n\nRatings:\n"+lines+"\n\nRules: Failing last 1-2 reps of last set = normal progressive overload, no change. Too easy = +2.5-5lbs. Too hard (failing early sets) = -2.5-5lbs. Just right = no change.\n\nReturn ONLY valid JSON, no markdown:\n{\"summary\":\"1-2 sentences. Acknowledge what went well. If no changes, say so and explain why. Warm but direct.\",\"adjustments\":{\"EXERCISE_ID\": NEW_WEIGHT}}\n\nOnly include exercises that genuinely need changing. Valid IDs: "+ids+". Week to adjust: "+(week+1)+".";
+    const prompt="You are a strength coach analyzing Week "+week+"/12 ("+PHASES[wi]+" phase). The user has already manually adjusted some weights and those adjustments have propagated forward. Now provide additional fine-tuning for next week based on ratings.\n\nRatings:\n"+lines+"\n\nKey rules:\n- If user adjusted AND rated 'just_right': adjustment was correct, do NOT change next week (it's already updated).\n- If user adjusted DOWN AND rated 'too_hard': go even lower next week (additional -2.5-5lbs).\n- If user adjusted DOWN AND rated 'too_easy': they decreased too much; bump back up (closer to planned).\n- If user adjusted UP AND rated 'just_right': great. Do not change.\n- If user did NOT adjust AND rated 'too_easy': +2.5-5lbs next week.\n- If user did NOT adjust AND rated 'too_hard': -2.5-5lbs next week.\n- If 'just_right' with no adjustment: no change. Failing last 1-2 reps of last set = expected, no change.\n\nReturn ONLY valid JSON, no markdown:\n{\"summary\":\"1-2 sentences. Acknowledge progress. If no changes, briefly explain why. Warm but direct.\",\"adjustments\":{\"EXERCISE_ID\": NEW_WEIGHT}}\n\nOnly include exercises that genuinely need additional adjustment beyond what propagation handled. Valid IDs: "+ids+". Week to adjust: "+(week+1)+".";
     try{
       const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,messages:[{role:"user",content:prompt}]})});
       const data=await res.json();const text=data.content.filter(b=>b.type==="text").map(b=>b.text).join("");
@@ -1512,8 +1787,19 @@ export default function App(){
     setCompletionAiSummary(summary);
   };
   const handleKeepGoing=()=>{
-    setShowComplete(false);const nextT=NEXT_TAB[tab];const nextW=nextT==='chest_tri'?Math.min(12,week+1):week;
-    changeTab(nextT);if(nextW!==week)changeWeek(nextW);window.scrollTo({top:0,behavior:'smooth'});
+    // Always exit focus mode and reset state — user lands on next day overview
+    setShowComplete(false);
+    setFocusMode(false);
+    setFocusGi(-1);
+    setAiRes(null);
+    setW1AiRes(null);
+    setFeedback("");
+    setW1Feedback("");
+    const nextT=NEXT_TAB[tab];
+    const nextW=nextT==='chest_tri'?Math.min(12,week+1):week;
+    changeTab(nextT);
+    if(nextW!==week)changeWeek(nextW);
+    window.scrollTo({top:0,behavior:'smooth'});
   };  const handleFeedback=async()=>{
     if(!feedback.trim()||loading) return;
     setLoading(true);setAiRes(null);
@@ -1579,6 +1865,16 @@ export default function App(){
       {showTour&&<AppTour step={tourStep} accent={day.accent} onNext={()=>setTourStep(p=>p+1)} onSkip={dismissTour}/>}
       {showGapPrompt&&<GapResumePrompt calculatedWeek={gapCalcWeek} lastCompletedWeek={gapLastWeek} onResume={handleGapResume} onAdjust={()=>{setShowGapPrompt(false);setScreen("settings");}}/>}
       {showComplete&&<CompletionOverlay day={day} week={week} message={completionMsg} aiSummary={completionAiSummary} completedSets={showComplete?.sets||0} totalVolume={showComplete?.volume||0} isW1={week===1} w1AiRes={w1AiRes} w1Feedback={w1Feedback} setW1Feedback={setW1Feedback} w1Loading={w1Loading} handleW1Feedback={handleW1Feedback} applyW1Recal={applyW1Recal} feedback={feedback} setFeedback={setFeedback} loading={loading} handleFeedback={handleFeedback} aiRes={aiRes} applyAi={applyAi} getW={getW} wi={wi} onClose={handleKeepGoing}/>}
+
+      {/* Toast — confirms weight propagation, AI adjustments, etc */}
+      {toast&&(
+        <div className="reveal" style={{position:"fixed",bottom:"24px",left:"50%",transform:"translateX(-50%)",zIndex:300,background:"rgba(28,28,30,0.96)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:DS.r12,padding:"12px 18px",border:`0.5px solid ${day.accent}40`,maxWidth:"90%",boxShadow:"0 8px 24px rgba(0,0,0,0.4)"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+            <span style={{color:day.accent}}>{Ico.check(14)}</span>
+            <span style={{fontSize:"13px",color:DS.label,lineHeight:1.4}}>{toast}</span>
+          </div>
+        </div>
+      )}
 
       {/* ── NAV BAR ── */}
       <div style={{position:"sticky",top:0,zIndex:20,background:"rgba(0,0,0,0.85)",backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",borderBottom:`0.5px solid ${DS.sep}`}}>
@@ -1659,11 +1955,13 @@ export default function App(){
               <div style={{display:"flex",background:DS.surfaceEl,borderRadius:DS.r10,padding:"2px",gap:"2px"}}>
                 {Object.entries(PLAN).map(([key,d])=>{
                   const sessionDone=completedSessions.includes(`${key}_w${week}`);const isActive=tab===key;
+                  // Day labels matching settings: "Chest/Tri", "Back/Shoulder/Bi", "Legs"
+                  const shortLabel={chest_tri:"Chest/Tri",back_shoulder_bi:"Back/Shoulder/Bi",legs:"Legs"}[key];
                   return(
                     <Btn key={key} onPress={()=>changeTab(key)} style={{flex:1,padding:"7px 4px",background:isActive?DS.surfaceEl2:"transparent",borderRadius:DS.r8,color:isActive||sessionDone?DS.label:DS.labelTert,fontSize:"12px",fontWeight:isActive?600:400,lineHeight:1.3,textAlign:"center",position:"relative",transition:"all 0.18s"}}>
-                      {sessionDone&&!isActive&&<span style={{position:"absolute",top:"3px",right:"5px",fontSize:"7px",color:DS.labelSec,fontWeight:700}}>✓</span>}
+                      {sessionDone&&<span style={{position:"absolute",top:"3px",right:"5px",fontSize:"7px",color:isActive?day.accent:DS.labelSec,fontWeight:700}}>✓</span>}
                       <div style={{fontSize:"13px",fontWeight:isActive?600:400,color:isActive?day.accent:sessionDone?DS.labelSec:DS.labelTert}}>{d.day}</div>
-                      <div style={{fontSize:"10px",color:isActive?DS.labelSec:DS.labelTert}}>{d.label.split(" ")[0]}</div>
+                      <div style={{fontSize:"10px",color:isActive?DS.labelSec:DS.labelTert}}>{shortLabel}</div>
                     </Btn>
                   );
                 })}
@@ -1702,7 +2000,7 @@ export default function App(){
               <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.5}}>{day.notes[wi]}</div>
             </div>
             {/* Floating sticky CTA — always visible, never competes with set logging */}
-            <Btn onPress={()=>{const gi=getResumeGi(day,wi);setFocusMode(true);setFocusGi(gi);window.scrollTo({top:0,behavior:'smooth'});}} style={{width:"100%",height:"52px",background:day.accent,borderRadius:DS.r12,color:day.accent===DS.blue?"#fff":"#000",fontSize:"17px",fontWeight:600,marginBottom:"24px",letterSpacing:"-0.2px",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px",boxShadow:`0 4px 20px ${day.accent}40`}}>
+            <Btn onPress={()=>{const gi=getResumeGi(day,wi);setFocusMode(true);setFocusGi(gi);window.scrollTo({top:0,behavior:'smooth'});}} style={{width:"100%",height:"52px",background:day.accent,borderRadius:DS.r12,color:day.accent===DS.blue?"#fff":"#000",fontSize:"17px",fontWeight:600,marginBottom:"24px",letterSpacing:"-0.2px",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
               Start Workout
             </Btn>
@@ -1735,6 +2033,12 @@ export default function App(){
                 <Btn onPress={()=>setFocusGi(0)} style={{width:"100%",height:"50px",background:day.accent,borderRadius:DS.r12,color:day.accent===DS.blue?"#fff":"#000",fontSize:"17px",fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:"8px"}}>
                   <span>Start Exercises</span>{Ico.chevRight(16)}
                 </Btn>
+                {/* Up next: first group */}
+                {(()=>{
+                  if(!day.groups[0])return null;
+                  const upNext=buildUpNext(day.groups[0].exercises.map(e=>e.name));
+                  return upNext?<div style={{marginTop:"8px",textAlign:"center",fontSize:"11px",color:DS.labelTert,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{upNext}</div>:null;
+                })()}
               </div>
             );
           }
@@ -1845,6 +2149,12 @@ export default function App(){
                         </div>
                         <Btn onPress={()=>adjustW(ex.id,wi,1)} style={{width:"44px",height:"44px",background:DS.fillTert,borderRadius:"50%",color:DS.labelSec,fontSize:"22px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>+</Btn>
                       </div>
+                      {/* Plate math — total / per-side breakdown */}
+                      {(()=>{const pm=calcPlateMath(ex.id,w,exSettings);if(!pm)return null;
+                        return(<div style={{textAlign:"center",fontSize:"12px",color:DS.labelTert,marginBottom:"8px",marginTop:"-4px"}}>
+                          {pm.barOnly?"bar only":`${pm.perSide} lbs/side`}
+                        </div>);
+                      })()}
                       {/* Sets × reps — clear prescription */}
                       <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"6px",marginBottom:"14px"}}>
                         <div style={{display:"flex",alignItems:"baseline",gap:"3px"}}>
@@ -1871,10 +2181,15 @@ export default function App(){
                         </div>
                         <div style={{display:"flex",gap:"8px"}}>
                           {cc<s?(
-                            <Btn onPress={()=>completeNextSet(ex.id,s,group.rest,group.label,false)} style={{flex:1,height:"64px",background:day.accent,borderRadius:DS.r12,color:day.accent===DS.blue?"#fff":"#000",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"2px",boxShadow:`0 4px 16px ${day.accent}50`}}>
+                            <HoldBtn
+                              onTap={()=>completeNextSet(ex.id,s,group.rest,group.label,false)}
+                              onHold={()=>{completeAllSets(ex.id,s,false);dismissHoldHint();}}
+                              fillColor="rgba(255,255,255,0.22)"
+                              style={{flex:1,height:"64px",background:day.accent,borderRadius:DS.r12,color:day.accent===DS.blue?"#fff":"#000",cursor:"pointer"}}
+                            >
                               <span style={{fontSize:"12px",fontWeight:500,opacity:0.75,letterSpacing:"0.3px"}}>SET {cc+1} OF {s}</span>
                               <span style={{fontSize:"22px",fontWeight:700,letterSpacing:"-0.5px"}}>Done ✓</span>
-                            </Btn>
+                            </HoldBtn>
                           ):(
                             <div style={{flex:1,height:"64px",display:"flex",alignItems:"center",justifyContent:"center",background:`${DS.green}12`,borderRadius:DS.r12,gap:"8px",color:DS.green,fontSize:"16px",fontWeight:600}}>
                               {Ico.check(16)}<span>All sets done</span>
@@ -1882,6 +2197,10 @@ export default function App(){
                           )}
                           {cc>0&&<Btn onPress={()=>undoLastSet(ex.id,s,false)} style={{height:"64px",width:"56px",background:DS.fillTert,borderRadius:DS.r12,color:DS.labelTert,display:"flex",alignItems:"center",justifyContent:"center"}}>{Ico.undo(15)}</Btn>}
                         </div>
+                        {/* Hold hint — shown until user discovers the gesture */}
+                        {cc>0&&cc<s&&!holdHintSeen&&(
+                          <div style={{textAlign:"center",fontSize:"10px",color:DS.labelTert,marginTop:"6px",letterSpacing:"0.2px"}}>Hold to log all remaining sets</div>
+                        )}
                       </div>
                       {allSetsDone&&(
                         <div className="reveal" style={{marginTop:"10px",padding:"10px 12px",background:DS.fillTert,borderRadius:DS.r10}}>
@@ -1908,6 +2227,18 @@ export default function App(){
                   <span>{isLast?"Core →":"Next"}</span>{!isLast&&Ico.chevRight(14)}
                 </Btn>
               </div>
+              {/* Up next preview */}
+              {(()=>{
+                const nextGi=focusGi+1;
+                if(nextGi>day.groups.length) return null; // on core step, no preview needed
+                if(nextGi===day.groups.length){
+                  // After last group, next is core
+                  return <div style={{marginTop:"8px",textAlign:"center",fontSize:"11px",color:DS.labelTert,whiteSpace:"nowrap",overflow:"hidden"}}>Up next: Core finisher</div>;
+                }
+                const nextNames=day.groups[nextGi].exercises.map(e=>e.name);
+                const upNext=buildUpNext(nextNames);
+                return upNext?<div style={{marginTop:"8px",textAlign:"center",fontSize:"11px",color:DS.labelTert,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{upNext}</div>:null;
+              })()}
             </div>
           );
         })()}
@@ -1975,12 +2306,15 @@ export default function App(){
                       {/* Inline weight with silent −/+ */}
                       <div style={{display:"flex",alignItems:"center",gap:"3px",flexShrink:0}}>
                         <Btn onPress={()=>adjustW(ex.id,wi,-1)} style={{color:DS.labelTert,fontSize:"14px",background:"none",padding:"0 2px",lineHeight:1}}>−</Btn>
-                        <div onClick={()=>{setEditingW(ex.id);setEditVal(String(w));}} style={{cursor:"pointer",flexShrink:0}}>
+                        <div onClick={()=>{setEditingW(ex.id);setEditVal(String(w));}} style={{cursor:"pointer",flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center"}}>
                           {editingW===ex.id?(
                             <input autoFocus type="number" inputMode="decimal" value={editVal} onChange={e=>setEditVal(e.target.value)} onBlur={()=>commitWeightEdit(ex.id)} onKeyDown={e=>{if(e.key==='Enter')commitWeightEdit(ex.id);}} style={{width:"56px",background:DS.surfaceEl,border:`1px solid ${day.accent}`,borderRadius:DS.r6,color:DS.label,fontFamily:DS.fontMono,fontSize:"15px",textAlign:"center",padding:"2px 5px",fontWeight:300}}/>
-                          ):(
-                            <span style={{fontFamily:DS.fontMono,fontSize:"16px",fontWeight:300,color:isAdj?day.accent:DS.label,letterSpacing:"-0.3px"}}>{wLabel}<span style={{fontSize:"10px",color:DS.labelTert,marginLeft:"2px"}}>{wSuffix}</span></span>
-                          )}
+                          ):(<>
+                            <span style={{fontFamily:DS.fontMono,fontSize:"16px",fontWeight:300,color:isAdj?day.accent:DS.label,letterSpacing:"-0.3px",lineHeight:1}}>{wLabel}<span style={{fontSize:"10px",color:DS.labelTert,marginLeft:"2px"}}>{wSuffix}</span></span>
+                            {(()=>{const pm=calcPlateMath(ex.id,w,exSettings);if(!pm)return null;
+                              return<span style={{fontSize:"9px",color:DS.labelTert,fontFamily:DS.fontMono,marginTop:"1px"}}>{pm.barOnly?"bar only":`${pm.perSide}/side`}</span>;
+                            })()}
+                          </>)}
                         </div>
                         <Btn onPress={()=>adjustW(ex.id,wi,1)} style={{color:DS.labelTert,fontSize:"14px",background:"none",padding:"0 2px",lineHeight:1}}>+</Btn>
                       </div>
