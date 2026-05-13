@@ -66,6 +66,13 @@ const DEFAULT_EX_SETTINGS = {
   leg_ext:      {increment:5,   minW:10,  maxW:null},
   leg_curl:     {increment:5,   minW:10,  maxW:null},
 };
+// Exercises that can legitimately be performed at 0 lbs (bodyweight)
+const BW_CAPABLE_IDS = ["pullup","calf"];
+
+// Lower-body compounds tolerate larger increments during hypertrophy
+// (Schoenfeld/Israetel: 5-10 lbs/week common on compounds vs 2.5 lbs/week on isolations)
+const LOWER_BODY_COMPOUNDS = ["leg_press","trap_bar","rdl"];
+
 const getExSetting=(exId,key,exSettings)=>exSettings?.[exId]?.[key]??DEFAULT_EX_SETTINGS[exId]?.[key]??2.5;
 const snapToIncrement=(val,exId,exSettings)=>{
   const inc=getExSetting(exId,"increment",exSettings);
@@ -375,6 +382,24 @@ async function saveGeneratedWeights(userId,weights){
   for(const[day,exIds] of Object.entries(dayMap)){for(const exId of exIds){if(!weights[exId])continue;for(let w=1;w<=12;w++)rows.push({user_id:userId,day,week:w,exercise_id:exId,weight:weights[exId][w-1],updated_at:new Date().toISOString()});}}
   for(let i=0;i<rows.length;i+=50) await supabase.from("weight_adjustments").upsert(rows.slice(i,i+50),{onConflict:"user_id,day,week,exercise_id"});
 }
+// Reset weights from a specific week forward (recovery action).
+// Used when bad data (e.g. negative weights from old AI bugs) needs to be wiped from the current
+// week onward, regenerating clean progression from benchmarks. Past weeks stay untouched.
+async function saveGeneratedWeightsFromWeek(userId,weights,fromWeek){
+  if(!weights) return;
+  const dayMap={chest_tri:['bench','pushdown','incline','skull','fly','kickback'],back_shoulder_bi:['pullup','row','facepull','db_shoulder','incline_curl','lat_raise','lat_pulldown'],legs:['trap_bar','leg_press','rdl','calf','leg_ext','leg_curl']};
+  const rows=[];
+  for(const[day,exIds] of Object.entries(dayMap)){
+    for(const exId of exIds){
+      if(!weights[exId]) continue;
+      for(let w=fromWeek;w<=12;w++){
+        rows.push({user_id:userId,day,week:w,exercise_id:exId,weight:weights[exId][w-1],updated_at:new Date().toISOString()});
+      }
+    }
+  }
+  for(let i=0;i<rows.length;i+=50) await supabase.from("weight_adjustments").upsert(rows.slice(i,i+50),{onConflict:"user_id,day,week,exercise_id"});
+  return rows.length;
+}
 function getAutoWeekAndTab(startDate,d1,d2,d3){
   if(!startDate) return{week:1,tab:null};
   const today=new Date();today.setHours(0,0,0,0);const start=new Date(startDate);start.setHours(0,0,0,0);
@@ -623,7 +648,7 @@ function OnboardingScreen({session,onComplete}){
 }
 
 // ── SETTINGS ───────────────────────────────────────────────────────────
-function SettingsScreen({session,userProgress,onBack,onSave}){
+function SettingsScreen({session,userProgress,currentWeek,onBack,onSave}){
   const[d1,setD1]=useState(userProgress?.day1_dow??0);
   const[d2,setD2]=useState(userProgress?.day2_dow??2);
   const[d3,setD3]=useState(userProgress?.day3_dow??4);
@@ -635,6 +660,10 @@ function SettingsScreen({session,userProgress,onBack,onSave}){
   const[expandedEx,setExpandedEx]=useState(null);
   const[stab,setStab]=useState("schedule");
   const[saving,setSaving]=useState(false);
+  // Recovery: reset weights from current week forward (used to fix bad data)
+  const[resetConfirm,setResetConfirm]=useState(false);
+  const[resetting,setResetting]=useState(false);
+  const[resetDone,setResetDone]=useState(null);
   const setExSetting=(exId,key,val)=>setLocalExSettings(p=>({...p,[exId]:{...p[exId],[key]:val}}));
   const handleSave=async()=>{
     setSaving(true);
@@ -642,6 +671,22 @@ function SettingsScreen({session,userProgress,onBack,onSave}){
     await supabase.from("user_progress").upsert({user_id:session.user.id,benchmarks,equipment,start_date:startDate,day1_dow:d1,day2_dow:d2,day3_dow:d3,manual_week_lock:manualLock,exercise_settings:localExSettings,updated_at:new Date().toISOString()});
     await saveGeneratedWeights(session.user.id,weights);
     setSaving(false);onSave();
+  };
+  // Recovery handler: regenerates weights from this week (inclusive) through week 12.
+  // Past weeks are not touched. Uses current benchmarks + equipment + exSettings.
+  const handleResetProgressions=async()=>{
+    const fromWeek = currentWeek || userProgress?.current_week || 1;
+    setResetting(true);
+    try{
+      const weights=buildWeights(benchmarks,equipment,localExSettings);
+      const written = await saveGeneratedWeightsFromWeek(session.user.id,weights,fromWeek);
+      setResetDone({fromWeek, written: written ?? 0});
+    }catch(e){
+      console.error("Reset progressions failed:",e);
+      setResetDone({error:true});
+    }
+    setResetting(false);
+    setResetConfirm(false);
   };
   const tabs=["schedule","equipment","chest","back","legs"];
   const tabLabels={schedule:"Schedule",equipment:"Equipment",chest:"Chest/Tri",back:"Back/Shoulder/Bi",legs:"Legs"};
@@ -702,6 +747,39 @@ function SettingsScreen({session,userProgress,onBack,onSave}){
                 <div style={{position:"absolute",top:"2px",left:manualLock?"22px":"2px",width:"27px",height:"27px",borderRadius:"50%",background:"#fff",boxShadow:"0 1px 3px rgba(0,0,0,0.3)",transition:"left 0.18s ease"}}/>
               </div>
             </Btn>
+          </div>
+
+          {/* Recovery section — reset future progressions if weights look wrong */}
+          <div style={{marginTop:"32px"}}>
+            <div style={{fontSize:"11px",fontWeight:600,color:DS.labelTert,marginBottom:"8px",letterSpacing:"0.5px",textTransform:"uppercase"}}>Recovery</div>
+            <div style={{fontSize:"13px",color:DS.labelTert,marginBottom:"12px",lineHeight:1.5}}>
+              If weights for upcoming weeks look wrong, this resets them to a clean progression based on your Week 1 benchmarks. Only affects Week {currentWeek||userProgress?.current_week||1} through Week 12. Weeks you've already completed stay untouched.
+            </div>
+            {resetDone && !resetDone.error && (
+              <div style={{background:`${DS.green}15`,border:`0.5px solid ${DS.green}40`,borderRadius:DS.r10,padding:"12px 14px",marginBottom:"12px",fontSize:"13px",color:DS.green,lineHeight:1.5}}>
+                Progressions reset from Week {resetDone.fromWeek} to Week 12. {resetDone.written} weight values regenerated. Re-open the workout view to see the updated weights.
+              </div>
+            )}
+            {resetDone && resetDone.error && (
+              <div style={{background:`${DS.red}15`,border:`0.5px solid ${DS.red}40`,borderRadius:DS.r10,padding:"12px 14px",marginBottom:"12px",fontSize:"13px",color:DS.red,lineHeight:1.5}}>
+                Reset failed. Check connection and try again.
+              </div>
+            )}
+            {!resetConfirm ? (
+              <Btn onPress={()=>{setResetConfirm(true);setResetDone(null);}} style={{width:"100%",padding:"13px 16px",background:DS.surface,border:`0.5px solid ${DS.sep}`,borderRadius:DS.r10,color:DS.labelSec,fontSize:"15px",fontWeight:500}}>
+                Reset Progressions From This Week Forward
+              </Btn>
+            ) : (
+              <div style={{background:`${DS.orange}10`,border:`0.5px solid ${DS.orange}40`,borderRadius:DS.r10,padding:"14px"}}>
+                <div style={{fontSize:"14px",color:DS.label,marginBottom:"10px",lineHeight:1.5}}>
+                  This will overwrite weights for Week {currentWeek||userProgress?.current_week||1} through Week 12 using your current benchmarks. Continue?
+                </div>
+                <div style={{display:"flex",gap:"8px"}}>
+                  <Btn onPress={()=>setResetConfirm(false)} disabled={resetting} style={{flex:1,padding:"10px",background:DS.surfaceEl,borderRadius:DS.r8,color:DS.labelSec,fontSize:"14px",fontWeight:500}}>Cancel</Btn>
+                  <Btn onPress={handleResetProgressions} disabled={resetting} style={{flex:1,padding:"10px",background:DS.orange,borderRadius:DS.r8,color:"#fff",fontSize:"14px",fontWeight:600}}>{resetting?"Resetting…":"Yes, Reset"}</Btn>
+                </div>
+              </div>
+            )}
           </div>
         </>)}
         {stab==="equipment"&&(
@@ -853,10 +931,10 @@ function CompletionOverlay({day,week,message,aiSummary,completedSets,totalVolume
 
         <div style={{fontSize:"14px",color:DS.labelSec,lineHeight:1.65,marginBottom:"16px",textAlign:"left"}}>{message}</div>
 
-        {/* AI plan update */}
+        {/* Plan update — deterministic summary of how next week was adjusted based on ratings */}
         <div style={{background:DS.surface,borderRadius:DS.r12,padding:"14px 16px",marginBottom:"20px",textAlign:"left"}}>
           <div style={{fontSize:"10px",fontWeight:700,color:DS.labelTert,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:"6px"}}>Plan Update</div>
-          <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.6}}>{aiSummary||"Reviewing your session ratings…"}</div>
+          <div style={{fontSize:"13px",color:DS.labelSec,lineHeight:1.6,whiteSpace:"pre-line"}}>{aiSummary||"Reviewing your session ratings…"}</div>
         </div>
 
         {/* Session feedback — only appears post-workout */}
@@ -1586,11 +1664,63 @@ export default function App(){
     return dayData.groups.length;
   };
 
-  const getW=(exId,wi)=>{const k=`${tab}_w${week}_${exId}`;if(adj[k]!==undefined)return adj[k];const ex=PLAN[tab].groups.flatMap(g=>g.exercises).find(e=>e.id===exId);return ex?ex.weights[wi]:0;};
-  const getPrevW=(exId,wi)=>{if(wi===0)return null;const k=`${tab}_w${week-1}_${exId}`;if(adj[k]!==undefined)return adj[k];const ex=PLAN[tab].groups.flatMap(g=>g.exercises).find(e=>e.id===exId);return ex?ex.weights[wi-1]:0;};
-  const getW1=(exId)=>{const k=`${tab}_w1_${exId}`;if(adj[k]!==undefined)return adj[k];const ex=PLAN[tab].groups.flatMap(g=>g.exercises).find(e=>e.id===exId);return ex?ex.weights[0]:0;};
+  // Defense in depth: getW never returns negative or sub-minW values, even if DB has bad data.
+  const getW=(exId,wi)=>{
+    const k=`${tab}_w${week}_${exId}`;
+    let v;
+    if(adj[k]!==undefined) v=adj[k];
+    else { const ex=PLAN[tab].groups.flatMap(g=>g.exercises).find(e=>e.id===exId); v=ex?ex.weights[wi]:0; }
+    if(typeof v !== "number" || isNaN(v) || v < 0) v = 0;
+    if(!BW_CAPABLE_IDS.includes(exId)){
+      const minW=getExSetting(exId,"minW",exSettings);
+      if(typeof minW === "number" && v < minW) v = minW;
+    }
+    return v;
+  };
+  const getPrevW=(exId,wi)=>{
+    if(wi===0) return null;
+    const k=`${tab}_w${week-1}_${exId}`;
+    let v;
+    if(adj[k]!==undefined) v=adj[k];
+    else { const ex=PLAN[tab].groups.flatMap(g=>g.exercises).find(e=>e.id===exId); v=ex?ex.weights[wi-1]:0; }
+    if(typeof v !== "number" || isNaN(v) || v < 0) v = 0;
+    if(!BW_CAPABLE_IDS.includes(exId)){
+      const minW=getExSetting(exId,"minW",exSettings);
+      if(typeof minW === "number" && v < minW) v = minW;
+    }
+    return v;
+  };
+  const getW1=(exId)=>{
+    const k=`${tab}_w1_${exId}`;
+    let v;
+    if(adj[k]!==undefined) v=adj[k];
+    else { const ex=PLAN[tab].groups.flatMap(g=>g.exercises).find(e=>e.id===exId); v=ex?ex.weights[0]:0; }
+    if(typeof v !== "number" || isNaN(v) || v < 0) v = 0;
+    if(!BW_CAPABLE_IDS.includes(exId)){
+      const minW=getExSetting(exId,"minW",exSettings);
+      if(typeof minW === "number" && v < minW) v = minW;
+    }
+    return v;
+  };
 
-  const saveWeight=(day,wk,exId,val)=>{if(!session)return;supabase.from("weight_adjustments").upsert({user_id:session.user.id,day,week:wk,exercise_id:exId,weight:val,updated_at:new Date().toISOString()},{onConflict:"user_id,day,week,exercise_id"});};
+  // saveWeight: validates input, awaits the upsert, and logs failures explicitly.
+  // Previous version was fire-and-forget which silently lost saves on transient errors.
+  const saveWeight=async(day,wk,exId,val)=>{
+    if(!session) return;
+    if(typeof val !== "number" || isNaN(val) || val < 0){
+      console.warn(`saveWeight rejected invalid value for ${exId} wk${wk}:`,val);
+      return;
+    }
+    try{
+      const{error}=await supabase.from("weight_adjustments").upsert({
+        user_id:session.user.id,day,week:wk,exercise_id:exId,weight:val,
+        updated_at:new Date().toISOString()
+      },{onConflict:"user_id,day,week,exercise_id"});
+      if(error) console.error("saveWeight failed:",error,{exId,wk,val});
+    }catch(e){
+      console.error("saveWeight exception:",e,{exId,wk,val});
+    }
+  };
   const adjustW=(exId,wi,dir)=>{
     const curr=getW(exId,wi);
     const inc=getExSetting(exId,"increment",exSettings);
@@ -1636,8 +1766,8 @@ export default function App(){
     let label="";
     if(isDecrease){
       if(incsAway<=1){
-        // Small decrease: shift remaining weeks down by same amount
-        for(let w=week+1;w<=12;w++){
+        // Small decrease: shift remaining weeks down by same amount. Week 12 (deload) excluded.
+        for(let w=week+1;w<=11;w++){
           const k=`${tab}_w${w}_${exId}`;
           const baseW=adj[k]??ex.weights[w-1];
           const nw=Math.max(0,snapToIncrement(baseW+diff,exId,exSettings));
@@ -1647,9 +1777,9 @@ export default function App(){
         label="Adjusted future weeks down";
       }else if(incsAway<=3){
         // Medium decrease: slow progression rate by 35% from this point forward
-        // New baseline: usedW. Apply progression deltas at 65% rate.
+        // New baseline: usedW. Apply progression deltas at 65% rate. Week 12 (deload) excluded.
         const slowdown=0.65;
-        for(let w=week+1;w<=12;w++){
+        for(let w=week+1;w<=11;w++){
           const planned=ex.weights[w-1];
           const plannedDelta=planned-plannedW; // how much the original plan progressed from current week
           const newDelta=plannedDelta*slowdown;
@@ -1660,8 +1790,8 @@ export default function App(){
         }
         label="Slowed progression for remaining weeks";
       }else{
-        // Large decrease: recompute as new baseline
-        for(let w=week+1;w<=12;w++){
+        // Large decrease: recompute as new baseline. Week 12 (deload) excluded.
+        for(let w=week+1;w<=11;w++){
           const planned=ex.weights[w-1];
           const plannedDelta=planned-plannedW;
           const nw=Math.max(0,snapToIncrement(usedW+plannedDelta,exId,exSettings));
@@ -1672,10 +1802,10 @@ export default function App(){
         label="Reset future weeks to new baseline";
       }
     }else if(isIncrease){
-      // Increase: shift remaining weeks up, but cap propagation for large jumps
-      // Cap: at most 2 increments of bonus carry forward
+      // Increase: shift remaining weeks up, but cap propagation for large jumps.
+      // Cap: at most 2 increments of bonus carry forward. Week 12 (deload) excluded.
       const carry=Math.min(diff,inc*2);
-      for(let w=week+1;w<=12;w++){
+      for(let w=week+1;w<=11;w++){
         const k=`${tab}_w${w}_${exId}`;
         const baseW=adj[k]??ex.weights[w-1];
         const nw=Math.max(0,snapToIncrement(baseW+carry,exId,exSettings));
@@ -1725,47 +1855,302 @@ export default function App(){
   const setRating=(exId,r)=>{setRatings(p=>({...p,[`${tab}_w${week}_${exId}`]:r}));if(session)supabase.from("exercise_ratings").upsert({user_id:session.user.id,day:tab,week,exercise_id:exId,rating:r},{onConflict:"user_id,day,week,exercise_id"});};
   const changeWeek=(w)=>{const c=Math.max(1,Math.min(12,w));setWeek(c);setAiRes(null);setFeedback("");setW1Feedback("");setW1AiRes(null);setMobOpen(true);setEditingW(null);propagatedRef.current=new Set();if(session)supabase.from("user_progress").upsert({user_id:session.user.id,current_week:c,updated_at:new Date().toISOString()});};
   const changeTab=(t)=>{setTab(t);setAiRes(null);setFeedback("");setW1Feedback("");setW1AiRes(null);setMobOpen(true);setEditingW(null);propagatedRef.current=new Set();if(session)supabase.from("user_progress").upsert({user_id:session.user.id,current_day:t,updated_at:new Date().toISOString()});};
-  const applyAi=async(aiAdj)=>{const n={...adj};const rows=[];for(const[id,w] of Object.entries(aiAdj)){n[`${tab}_w${week}_${id}`]=w;rows.push({user_id:session?.user.id,day:tab,week,exercise_id:id,weight:w,updated_at:new Date().toISOString()});}setAdj(n);setAiRes(null);setFeedback("");if(session&&rows.length)await supabase.from("weight_adjustments").upsert(rows,{onConflict:"user_id,day,week,exercise_id"});};
+  // applyAi: applies AI-suggested adjustments from free-text feedback. Strictly validates.
+  // Rejects negative values, NaN, and zero on non-bodyweight exercises.
+  const applyAi=async(aiAdj)=>{
+    const n={...adj};
+    const rows=[];
+    for(const[id,w] of Object.entries(aiAdj)){
+      if(typeof w !== "number" || isNaN(w) || w < 0){
+        console.warn(`applyAi rejecting ${id}:`,w);
+        continue;
+      }
+      if(!BW_CAPABLE_IDS.includes(id) && w === 0){
+        console.warn(`applyAi rejecting ${id}: 0 on non-bodyweight exercise`);
+        continue;
+      }
+      n[`${tab}_w${week}_${id}`]=w;
+      rows.push({user_id:session?.user.id,day:tab,week,exercise_id:id,weight:w,updated_at:new Date().toISOString()});
+    }
+    setAdj(n);setAiRes(null);setFeedback("");
+    if(session&&rows.length){
+      try{
+        const{error}=await supabase.from("weight_adjustments").upsert(rows,{onConflict:"user_id,day,week,exercise_id"});
+        if(error) console.error("applyAi save failed:",error);
+      }catch(e){console.error("applyAi save exception:",e);}
+    }
+  };
   const applyW1Recal=async(adjustments)=>{
     const n={...adj};const rows=[];const changes=[];
     for(const[id,newW1] of Object.entries(adjustments)){
+      // Sanitize: skip invalid suggestions
+      if(typeof newW1 !== "number" || isNaN(newW1) || newW1 < 0) continue;
+      if(!BW_CAPABLE_IDS.includes(id) && newW1 === 0) continue;
       const oldW1=getW(id,0);const diff=newW1-oldW1;
       const fe=PLAN[tab].groups.flatMap(g=>g.exercises).find(e=>e.id===id);
+      const minW=getExSetting(id,"minW",exSettings)??0;
       if(diff!==0)changes.push(`${fe?.name||id} ${diff>0?`+${diff}lbs`:`${diff}lbs`} to ${newW1}lbs`);
-      for(let wk=1;wk<=12;wk++){const baseW=adj[`${tab}_w${wk}_${id}`]??fe?.weights[wk-1]??newW1;const nw=Math.max(0,r25(baseW+diff));n[`${tab}_w${wk}_${id}`]=nw;rows.push({user_id:session?.user.id,day:tab,week:wk,exercise_id:id,weight:nw,updated_at:new Date().toISOString()});}
+      for(let wk=1;wk<=12;wk++){
+        const baseW=adj[`${tab}_w${wk}_${id}`]??fe?.weights[wk-1]??newW1;
+        let nw=r25(baseW+diff);
+        // Floor at minW for non-bodyweight, 0 for bodyweight-capable
+        if(BW_CAPABLE_IDS.includes(id)){ if(nw<0) nw=0; }
+        else if(nw<minW) nw=minW;
+        n[`${tab}_w${wk}_${id}`]=nw;
+        rows.push({user_id:session?.user.id,day:tab,week:wk,exercise_id:id,weight:nw,updated_at:new Date().toISOString()});
+      }
     }
     setAdj(n);setW1AiRes({...w1AiRes,applied:true,summary:changes.join(". ")});setW1Feedback("");
     if(session&&rows.length){for(let i=0;i<rows.length;i+=50)await supabase.from("weight_adjustments").upsert(rows.slice(i,i+50),{onConflict:"user_id,day,week,exercise_id"});}
   };
+  // processRatings: deterministic, research-backed end-of-session adjustment rules.
+  // Replaces the prior AI-based version which produced negative/invalid weights when the model
+  // returned deltas instead of absolute values. Rules below derive from Schoenfeld/Israetel
+  // double-progression, Plotkin 2022 (rep vs load progression equivalence), and standard
+  // hypertrophy/strength block periodization (RP, Helms, Juggernaut).
   const processRatings=async()=>{
     const dayRatings=Object.entries(ratings).filter(([k])=>k.startsWith(`${tab}_w${week}_`));
     setProcessingRatings(true);
-    const day=PLAN[tab];const wi=week-1;
-    if(dayRatings.length===0){setProcessingRatings(false);return "No ratings collected this session.";}
-    // Build rating lines with awareness of whether user manually adjusted
-    const lines=dayRatings.map(([k,r])=>{
-      const exId=k.split('_').slice(3).join('_');
-      const fe=day.groups.flatMap(g=>g.exercises).find(e=>e.id===exId);
+    const day=PLAN[tab];
+    const wi=week-1;
+
+    if(dayRatings.length===0){
+      setProcessingRatings(false);
+      return "No ratings collected this session.";
+    }
+
+    // Deload week: no adjustments. The deload is intentional rest for recovery.
+    if(week === 12){
+      setProcessingRatings(false);
+      return "Deload week. No weight adjustments — this week is intentional rest. Focus on recovery, form, and full range of motion.";
+    }
+
+    // Fetch prior week's ratings to detect consecutive too_hard signals (warrant larger reduction).
+    let priorRatings={};
+    if(session && week > 1){
+      try{
+        const{data:priorData}=await supabase.from("exercise_ratings")
+          .select("exercise_id,rating")
+          .eq("user_id",session.user.id)
+          .eq("day",tab)
+          .eq("week",week-1);
+        if(priorData) priorData.forEach(r=>{priorRatings[r.exercise_id]=r.rating;});
+      }catch(e){console.error("Prior ratings fetch failed:",e);}
+    }
+
+    const phaseIsHypertrophy = wi < 4;  // weeks 1-4
+    const updates={};
+    const rows=[];
+    const summaryLines=[];
+
+    for(const[ratingKey,rating] of dayRatings){
+      const exId=ratingKey.split('_').slice(3).join('_');
+      const ex=day.groups.flatMap(g=>g.exercises).find(e=>e.id===exId);
+      if(!ex) continue;
+
       const usedW=getW(exId,wi);
       const plannedW=getPlannedW(exId,wi);
-      const wasAdjusted=usedW!==plannedW;
-      const adjNote=wasAdjusted?` (user adjusted from planned ${plannedW}lbs)`:"";
-      return `${fe?.name||exId}: used ${usedW}lbs${adjNote} — rated "${r}"`;
-    }).join("\n");
-    const ids=day.groups.flatMap(g=>g.exercises.map(e=>e.id)).join(",");
-    const prompt="You are a strength coach analyzing Week "+week+"/12 ("+PHASES[wi]+" phase). The user has already manually adjusted some weights and those adjustments have propagated forward. Now provide additional fine-tuning for next week based on ratings.\n\nRatings:\n"+lines+"\n\nKey rules:\n- If user adjusted AND rated 'just_right': adjustment was correct, do NOT change next week (it's already updated).\n- If user adjusted DOWN AND rated 'too_hard': go even lower next week (additional -2.5-5lbs).\n- If user adjusted DOWN AND rated 'too_easy': they decreased too much; bump back up (closer to planned).\n- If user adjusted UP AND rated 'just_right': great. Do not change.\n- If user did NOT adjust AND rated 'too_easy': +2.5-5lbs next week.\n- If user did NOT adjust AND rated 'too_hard': -2.5-5lbs next week.\n- If 'just_right' with no adjustment: no change. Failing last 1-2 reps of last set = expected, no change.\n\nReturn ONLY valid JSON, no markdown:\n{\"summary\":\"1-2 sentences. Acknowledge progress. If no changes, briefly explain why. Warm but direct.\",\"adjustments\":{\"EXERCISE_ID\": NEW_WEIGHT}}\n\nOnly include exercises that genuinely need additional adjustment beyond what propagation handled. Valid IDs: "+ids+". Week to adjust: "+(week+1)+".";
-    try{
-      const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,messages:[{role:"user",content:prompt}]})});
-      const data=await res.json();const text=data.content.filter(b=>b.type==="text").map(b=>b.text).join("");
-      const parsed=JSON.parse(text.replace(/```json|```/g,"").trim());
-      if(parsed.adjustments&&Object.keys(parsed.adjustments).length>0){
-        const n={...adj};const rows=[];
-        for(const[id,nw] of Object.entries(parsed.adjustments)){const nx=week+1;if(nx<=12){n[`${tab}_w${nx}_${id}`]=nw;rows.push({user_id:session?.user.id,day:tab,week:nx,exercise_id:id,weight:nw,updated_at:new Date().toISOString()});}}
-        setAdj(n);if(session&&rows.length)await supabase.from("weight_adjustments").upsert(rows,{onConflict:"user_id,day,week,exercise_id"});
+      const isAdjusted = usedW !== plannedW;
+      const adjDirection = !isAdjusted ? "none" : (usedW > plannedW ? "up" : "down");
+      const inc=getExSetting(exId,"increment",exSettings);
+      const minW=getExSetting(exId,"minW",exSettings) ?? 0;
+      const isLowerCompound=LOWER_BODY_COMPOUNDS.includes(exId);
+      const isBW=BW_CAPABLE_IDS.includes(exId);
+      const atBW = isBW && usedW === 0;
+
+      // Did all prescribed sets get completed? Uncompleted sets escalate too_hard treatment.
+      let allSetsDone=true;
+      const totalSets=ex.sets[wi];
+      for(let i=0;i<totalSets;i++){
+        if(!done[`${tab}_w${week}_${exId}_s${i}`]){ allSetsDone=false; break; }
       }
-      setProcessingRatings(false);
-      return parsed.summary||"Good session. Weights are on track.";
-    }catch(e){console.error("Rating processing failed:",e);setProcessingRatings(false);return "Good session. Keep the weights for next week and focus on form.";}
+
+      const wasTooHardLastWeek = priorRatings[exId] === "too_hard";
+
+      let newWeight = usedW;       // default: no change
+      let progressionSlowdown = null; // optional: 0-1 multiplier to slow remaining weeks
+      let advisory = null;          // optional human-readable note
+      let action = "none";          // for summary line generation
+
+      // ─────────────────────────────────────────────────────────
+      // BRANCH 1: Bodyweight pull-ups (and any BW exercise at 0)
+      // Per research (SET FOR SET, Fitbod, Quora calisthenics):
+      // - At BW, progress reps before adding weight (until ~10 strict reps)
+      // - "too_hard" at BW = need regression (lat pulldown / negatives / assisted)
+      // - "too_easy" at BW = rep progression continues naturally per the plan
+      // We can't programmatically change reps yet, so surface advisory.
+      // ─────────────────────────────────────────────────────────
+      if(atBW){
+        newWeight = 0;
+        if(rating === "too_easy"){
+          action = "bw_easy";
+          advisory = `${ex.name}: you're handling bodyweight well. The program already increases rep targets weekly leading to weighted work in Week 5.`;
+        } else if(rating === "just_right"){
+          action = "bw_just_right";
+          // No advisory; planned progression continues
+        } else if(rating === "too_hard"){
+          action = "bw_hard";
+          if(!allSetsDone){
+            advisory = `${ex.name}: if you can't complete sets, regress to band-assisted pull-ups, eccentric-only negatives, or substitute lat pulldowns until your strength catches up. Week 5 adds load, so build the foundation now.`;
+          } else {
+            advisory = `${ex.name}: pull-ups are demanding. Stay at bodyweight and focus on form, range of motion, and rep quality.`;
+          }
+        }
+      }
+      // ─────────────────────────────────────────────────────────
+      // BRANCH 2: Standard weighted exercises (and BW exercises with non-zero weight)
+      // The plan already encodes natural week-over-week progression in ex.weights.
+      // Adjustments are RELATIVE TO the planned next-week weight, not the current week.
+      // ─────────────────────────────────────────────────────────
+      else {
+        const nextPlanned = ex.weights[wi+1] ?? plannedW;
+        const plannedDelta = nextPlanned - plannedW;  // how much the plan would naturally bump
+        const easyBumpInc = (phaseIsHypertrophy && isLowerCompound) ? inc * 2 : inc;
+
+        if(rating === "too_easy"){
+          if(adjDirection === "up"){
+            // Adjusted up + still too easy: continue planned delta from their elevated baseline, plus one extra bump.
+            newWeight = snapToIncrement(usedW + plannedDelta + inc, exId, exSettings);
+            action = "too_easy_after_up";
+          } else if(adjDirection === "down"){
+            // Adjusted down + too easy: their downward adjustment was wrong. Snap back to planned next week.
+            newWeight = snapToIncrement(nextPlanned, exId, exSettings);
+            action = "too_easy_after_down";
+          } else {
+            // No adjustment + too easy: planned + 1 increment (2 for lower-body compounds in hypertrophy).
+            newWeight = snapToIncrement(nextPlanned + easyBumpInc, exId, exSettings);
+            action = "too_easy_default";
+          }
+        } else if(rating === "just_right"){
+          if(isAdjusted){
+            // Adjusted + just right: their adjustment is correct. Apply planned delta from new baseline.
+            newWeight = snapToIncrement(usedW + plannedDelta, exId, exSettings);
+            action = "just_right_after_adj";
+          } else {
+            // No adjustment + just right: continue planned progression naturally.
+            newWeight = nextPlanned;
+            action = "just_right_default";
+          }
+        } else if(rating === "too_hard"){
+          // Escalation criteria: failed to complete sets, OR prior week also too_hard.
+          const escalate = !allSetsDone || wasTooHardLastWeek;
+          const reductionIncrements = escalate ? 2 : 1;
+
+          if(adjDirection === "up"){
+            // Adjusted up + too hard: they overshot. Revert to planned next week.
+            newWeight = snapToIncrement(nextPlanned, exId, exSettings);
+            action = "too_hard_after_up";
+          } else if(adjDirection === "down"){
+            // Adjusted down + still too hard: continue planned delta from their baseline, then reduce more. Slow remaining weeks.
+            newWeight = snapToIncrement(usedW + plannedDelta - inc * reductionIncrements, exId, exSettings);
+            progressionSlowdown = escalate ? 0.5 : 0.6;
+            action = "too_hard_after_down";
+          } else {
+            // No adjustment + too hard: reduce from planned next week. Slow remaining weeks.
+            newWeight = snapToIncrement(nextPlanned - inc * reductionIncrements, exId, exSettings);
+            progressionSlowdown = escalate ? 0.5 : 0.7;
+            action = "too_hard_default";
+          }
+
+          if(wasTooHardLastWeek){
+            advisory = `${ex.name}: too hard for two sessions in a row. Made a larger reduction and slowed remaining progressions. If this continues, consider whether form, recovery, or this exercise selection needs attention.`;
+          }
+        }
+      }
+
+      // Clamp to valid range
+      if(!isBW){
+        if(newWeight < minW) newWeight = minW;
+      } else {
+        if(newWeight < 0) newWeight = 0;
+      }
+
+      // Compose summary line — explicit about WHAT happened, in plain language.
+      if(advisory){
+        summaryLines.push(advisory);
+      } else if(atBW && action === "bw_just_right"){
+        summaryLines.push(`${ex.name}: continuing at bodyweight per plan.`);
+      } else if(atBW && action === "none"){
+        // No matching rule for BW (shouldn't happen, defensive fallback)
+        summaryLines.push(`${ex.name}: continuing at bodyweight per plan.`);
+      } else {
+        const nextLbl = isBW && newWeight === 0 ? "bodyweight" : `${newWeight} lbs`;
+        switch(action){
+          case "just_right_default":
+            summaryLines.push(`${ex.name}: rated just right. Continuing planned progression (next week: ${nextLbl}).`);
+            break;
+          case "just_right_after_adj":
+            summaryLines.push(`${ex.name}: your adjustment was on target. Next week: ${nextLbl}.`);
+            break;
+          case "too_easy_default":
+            summaryLines.push(`${ex.name}: rated too easy. Pushing next week above plan to ${nextLbl}.`);
+            break;
+          case "too_easy_after_up":
+            summaryLines.push(`${ex.name}: still too easy after your bump. Pushing further to ${nextLbl} next week.`);
+            break;
+          case "too_easy_after_down":
+            summaryLines.push(`${ex.name}: cut too aggressively. Back to ${nextLbl} for next week.`);
+            break;
+          case "too_hard_default":
+            summaryLines.push(`${ex.name}: rated too hard. Easing next week to ${nextLbl} and slowing remaining progressions.`);
+            break;
+          case "too_hard_after_down":
+            summaryLines.push(`${ex.name}: still too hard after your reduction. Easing further to ${nextLbl} and slowing remaining progressions.`);
+            break;
+          case "too_hard_after_up":
+            summaryLines.push(`${ex.name}: too hard after your increase. Reverting to planned ${nextLbl} next week.`);
+            break;
+          default:
+            // Fallback for any unhandled action
+            summaryLines.push(`${ex.name}: next week ${nextLbl}.`);
+        }
+      }
+
+      // Persist next-week weight (skip bodyweight branch — handled implicitly by plan).
+      // Skip week 12 (deload) — that week stays at its originally planned deload weight.
+      const nx = week + 1;
+      if(nx <= 11 && !atBW){
+        updates[`${tab}_w${nx}_${exId}`] = newWeight;
+        rows.push({
+          user_id: session?.user.id, day: tab, week: nx, exercise_id: exId,
+          weight: newWeight, updated_at: new Date().toISOString()
+        });
+      }
+
+      // If slowdown was set, recompute remaining weeks (nx+1 through 11) from new baseline.
+      // Week 12 (deload) excluded — it stays at the planned deload weight.
+      if(progressionSlowdown && nx < 11 && !atBW){
+        const nextPlanned = ex.weights[wi+1] ?? plannedW;
+        for(let w = nx + 1; w <= 11; w++){
+          const planned = ex.weights[w-1];
+          const plannedDelta = planned - nextPlanned;  // delta from NEXT week's planned, not current
+          let slowedW = snapToIncrement(newWeight + plannedDelta * progressionSlowdown, exId, exSettings);
+          if(!isBW && slowedW < minW) slowedW = minW;
+          if(slowedW < 0) slowedW = 0;
+          updates[`${tab}_w${w}_${exId}`] = slowedW;
+          rows.push({
+            user_id: session?.user.id, day: tab, week: w, exercise_id: exId,
+            weight: slowedW, updated_at: new Date().toISOString()
+          });
+        }
+      }
+    }
+
+    // Apply local state and persist
+    if(Object.keys(updates).length > 0) setAdj(p => ({...p, ...updates}));
+    if(session && rows.length > 0){
+      try{
+        for(let i = 0; i < rows.length; i += 50){
+          const{error}=await supabase.from("weight_adjustments").upsert(rows.slice(i, i+50), {onConflict:"user_id,day,week,exercise_id"});
+          if(error) console.error("processRatings save failed:", error);
+        }
+      }catch(e){
+        console.error("processRatings save exception:",e);
+      }
+    }
+
+    setProcessingRatings(false);
+    return summaryLines.length > 0 ? summaryLines.join("\n\n") : "Session complete. Continuing planned progression.";
   };
   const NEXT_TAB={chest_tri:'back_shoulder_bi',back_shoulder_bi:'legs',legs:'chest_tri'};
   const handleFinishWorkout=async()=>{
@@ -1807,9 +2192,19 @@ export default function App(){
     const summary=day.groups.flatMap(g=>g.exercises.map(ex=>{const w=getW(ex.id,wi);return `${ex.name}: ${ex.sets[wi]}x${ex.reps[wi]} @ ${ex.isPullup?(w===0?"bodyweight":`+${w}lbs`):`${w}lbs`}`;})).join("\n");
     const ids=day.groups.flatMap(g=>g.exercises.map(e=>e.id)).join(",");
     try{
-      const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:500,messages:[{role:"user",content:`Strength coach. Week ${week}/12, ${PHASES[wi]} phase.\n\nWorkout:\n${summary}\n\nFeedback: "${feedback}"\n\nReturn ONLY valid JSON:\n{"analysis":"one sentence","adjustments":{"EXERCISE_ID": NEW_WEIGHT_NUMBER}}\n\nOnly include exercises that need changing. Valid IDs: ${ids}. Round to 2.5lbs.`}]})});
+      const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:500,messages:[{role:"user",content:`Strength coach. Week ${week}/12, ${PHASES[wi]} phase.\n\nWorkout:\n${summary}\n\nFeedback: "${feedback}"\n\nReturn ONLY valid JSON:\n{"analysis":"one sentence","adjustments":{"EXERCISE_ID": NEW_ABSOLUTE_POSITIVE_WEIGHT_IN_LBS}}\n\nIMPORTANT: All weights must be POSITIVE absolute values (e.g. 60, not -5). Never deltas. Only include exercises that need changing. Valid IDs: ${ids}. Round to 2.5lbs.`}]})});
       const data=await res.json();const text=data.content.filter(b=>b.type==="text").map(b=>b.text).join("");
       const parsed=JSON.parse(text.replace(/```json|```/g,"").trim());
+      // Sanitize: drop any adjustment whose weight is non-numeric, negative, or zero on a non-BW exercise
+      if(parsed.adjustments){
+        const clean={};
+        for(const[id,w] of Object.entries(parsed.adjustments)){
+          if(typeof w !== "number" || isNaN(w) || w < 0) continue;
+          if(!BW_CAPABLE_IDS.includes(id) && w === 0) continue;
+          clean[id]=w;
+        }
+        parsed.adjustments=clean;
+      }
       setAiRes(parsed);if(session) await supabase.from("session_feedback").insert({user_id:session.user.id,day:tab,week,feedback,ai_response:parsed});
     }catch{setAiRes({analysis:"Could not process. Try again.",adjustments:{}});}
     setLoading(false);
@@ -1821,9 +2216,20 @@ export default function App(){
     const summary=day.groups.flatMap(g=>g.exercises.map(ex=>{const w=getW(ex.id,0);return `${ex.name}: ${ex.sets[0]}x${ex.reps[0]} @ ${ex.isPullup?(w===0?"bodyweight":`+${w}lbs`):`${w}lbs`}`;})).join("\n");
     const ids=day.groups.flatMap(g=>g.exercises.map(e=>e.id)).join(",");
     try{
-      const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:600,messages:[{role:"user",content:`Strength coach. End of Week 1, calibration complete.\n\nWeek 1 workout:\n${summary}\n\nFeedback: "${w1Feedback}"\n\nReturn ONLY valid JSON:\n{"analysis":"one sentence","adjustments":{"EXERCISE_ID": CORRECTED_WEIGHT_NUMBER}}\n\nOnly include exercises needing adjustment. Valid IDs: ${ids}. Round to 2.5lbs.`}]})});
+      const res=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:600,messages:[{role:"user",content:`Strength coach. End of Week 1, calibration complete.\n\nWeek 1 workout:\n${summary}\n\nFeedback: "${w1Feedback}"\n\nReturn ONLY valid JSON:\n{"analysis":"one sentence","adjustments":{"EXERCISE_ID": CORRECTED_ABSOLUTE_POSITIVE_WEIGHT_IN_LBS}}\n\nIMPORTANT: All weights must be POSITIVE absolute values (e.g. 60, not -5). Never deltas. Only include exercises needing adjustment. Valid IDs: ${ids}. Round to 2.5lbs.`}]})});
       const data=await res.json();const text=data.content.filter(b=>b.type==="text").map(b=>b.text).join("");
-      setW1AiRes(JSON.parse(text.replace(/```json|```/g,"").trim()));
+      const parsed=JSON.parse(text.replace(/```json|```/g,"").trim());
+      // Sanitize: drop any adjustment whose weight is non-numeric, negative, or zero on a non-BW exercise
+      if(parsed.adjustments){
+        const clean={};
+        for(const[id,w] of Object.entries(parsed.adjustments)){
+          if(typeof w !== "number" || isNaN(w) || w < 0) continue;
+          if(!BW_CAPABLE_IDS.includes(id) && w === 0) continue;
+          clean[id]=w;
+        }
+        parsed.adjustments=clean;
+      }
+      setW1AiRes(parsed);
     }catch{setW1AiRes({analysis:"Could not process. Try again.",adjustments:{}});}
     setW1Loading(false);
   };
@@ -1832,7 +2238,7 @@ export default function App(){
   if(!session) return <AuthScreen/>;
   if(userProgress===undefined) return <div style={{background:DS.bg,minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:DS.labelTert,fontSize:"15px",fontFamily:DS.font}}>Loading your plan…</div>;
   if(userProgress===null||!userProgress.setup_complete) return <OnboardingScreen session={session} onComplete={()=>loadProgress()}/>;
-  if(screen==="settings") return <SettingsScreen session={session} userProgress={userProgress} onBack={()=>setScreen("workout")} onSave={()=>{loadProgress();setScreen("workout");}}/>;
+  if(screen==="settings") return <SettingsScreen session={session} userProgress={userProgress} currentWeek={week} onBack={()=>setScreen("workout")} onSave={()=>{loadProgress();setScreen("workout");}}/>;
   if(screen==="progress") return <ProgressScreen session={session} adj={adj} userProgress={userProgress} completedSessions={completedSessions} currentWeek={week} onBack={()=>setScreen("workout")}/>;
 
   const day=PLAN[tab];const wi=week-1;const phase=PHASES[wi];const pc=PHASE_COLORS[phase];
@@ -2098,7 +2504,9 @@ export default function App(){
               {group.exercises.map((ex)=>{
                 const w=getW(ex.id,wi),prevW=getPrevW(ex.id,wi),w1base=getW1(ex.id);
                 const s=ex.sets[wi],r=ex.reps[wi],bo=ex.backoff[wi];
-                const wLabel=ex.isPullup?(w===0?"BW":`+${w}`):`${w}`;
+                // Bodyweight-capable: pull-ups (already flagged) plus any exercise in BW_CAPABLE_IDS (e.g. calf raises).
+                const isBWCapable = ex.isPullup || BW_CAPABLE_IDS.includes(ex.id);
+                const wLabel = isBWCapable && w === 0 ? "BW" : (ex.isPullup ? `+${w}` : `${w}`);
                 const isAdj=adj[`${tab}_w${week}_${ex.id}`]!==undefined;
                 const cues=FORM_CUES[ex.id],isOpen=cueOpen[ex.id];
                 const delta=(week>1&&prevW!==null)?Math.round((w-prevW)*10)/10:null;
@@ -2143,7 +2551,7 @@ export default function App(){
                           ):(
                             <div onClick={()=>{setEditingW(ex.id);setEditVal(String(w));}} style={{cursor:"pointer"}}>
                               <span style={{fontFamily:DS.fontMono,fontSize:"52px",fontWeight:300,color:isAdj?day.accent:DS.label,letterSpacing:"-2px",lineHeight:1}}>{wLabel}</span>
-                              <span style={{fontSize:"16px",color:DS.labelSec,marginLeft:"4px"}}>{ex.isPullup&&w>0?"lbs":!ex.isPullup?"lbs":""}</span>
+                              <span style={{fontSize:"16px",color:DS.labelSec,marginLeft:"4px"}}>{isBWCapable&&w===0?"":"lbs"}</span>
                             </div>
                           )}
                         </div>
@@ -2271,8 +2679,9 @@ export default function App(){
             {group.exercises.map((ex)=>{
               const w=getW(ex.id,wi);
               const s=ex.sets[wi],r=ex.reps[wi],bo=ex.backoff[wi];
-              const wLabel=ex.isPullup?(w===0?"BW":`+${w}`):`${w}`;
-              const wSuffix=ex.isPullup&&w===0?"":ex.isPullup?" lbs":" lbs";
+              const isBWCapable = ex.isPullup || BW_CAPABLE_IDS.includes(ex.id);
+              const wLabel = isBWCapable && w === 0 ? "BW" : (ex.isPullup ? `+${w}` : `${w}`);
+              const wSuffix = isBWCapable && w === 0 ? "" : " lbs";
               const isAdj=adj[`${tab}_w${week}_${ex.id}`]!==undefined;
               const cues=FORM_CUES[ex.id],isOpen=cueOpen[ex.id];
               const isPR=PR_EXERCISES.includes(ex.id)&&prs[ex.id]&&w>0&&w>=prs[ex.id]&&isAdj;
