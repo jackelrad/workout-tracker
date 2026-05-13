@@ -648,7 +648,7 @@ function OnboardingScreen({session,onComplete}){
 }
 
 // ── SETTINGS ───────────────────────────────────────────────────────────
-function SettingsScreen({session,userProgress,currentWeek,onBack,onSave}){
+function SettingsScreen({session,userProgress,currentWeek,onBack,onSave,onReload}){
   const[d1,setD1]=useState(userProgress?.day1_dow??0);
   const[d2,setD2]=useState(userProgress?.day2_dow??2);
   const[d3,setD3]=useState(userProgress?.day3_dow??4);
@@ -674,6 +674,7 @@ function SettingsScreen({session,userProgress,currentWeek,onBack,onSave}){
   };
   // Recovery handler: regenerates weights from this week (inclusive) through week 12.
   // Past weeks are not touched. Uses current benchmarks + equipment + exSettings.
+  // Calls onReload after success so parent reloads adj state from DB (prevents stale UI).
   const handleResetProgressions=async()=>{
     const fromWeek = currentWeek || userProgress?.current_week || 1;
     setResetting(true);
@@ -681,6 +682,8 @@ function SettingsScreen({session,userProgress,currentWeek,onBack,onSave}){
       const weights=buildWeights(benchmarks,equipment,localExSettings);
       const written = await saveGeneratedWeightsFromWeek(session.user.id,weights,fromWeek);
       setResetDone({fromWeek, written: written ?? 0});
+      // Refresh parent state so the workout view shows the regenerated weights immediately.
+      if(typeof onReload === "function") await onReload();
     }catch(e){
       console.error("Reset progressions failed:",e);
       setResetDone({error:true});
@@ -2238,7 +2241,7 @@ export default function App(){
   if(!session) return <AuthScreen/>;
   if(userProgress===undefined) return <div style={{background:DS.bg,minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:DS.labelTert,fontSize:"15px",fontFamily:DS.font}}>Loading your plan…</div>;
   if(userProgress===null||!userProgress.setup_complete) return <OnboardingScreen session={session} onComplete={()=>loadProgress()}/>;
-  if(screen==="settings") return <SettingsScreen session={session} userProgress={userProgress} currentWeek={week} onBack={()=>setScreen("workout")} onSave={()=>{loadProgress();setScreen("workout");}}/>;
+  if(screen==="settings") return <SettingsScreen session={session} userProgress={userProgress} currentWeek={week} onBack={()=>setScreen("workout")} onSave={()=>{loadProgress();setScreen("workout");}} onReload={loadProgress}/>;
   if(screen==="progress") return <ProgressScreen session={session} adj={adj} userProgress={userProgress} completedSessions={completedSessions} currentWeek={week} onBack={()=>setScreen("workout")}/>;
 
   const day=PLAN[tab];const wi=week-1;const phase=PHASES[wi];const pc=PHASE_COLORS[phase];
